@@ -105,10 +105,12 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)External\Vulkan\Include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)\External\Vulkan\Lib;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -120,16 +122,71 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)External\Vulkan\Include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)\External\Vulkan\Lib;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="External\Vulkan\Include\vulkan\vulkan.cppm" />
+    <ClCompile Include="External\Vulkan\Include\vulkan\vulkan_video.cppm" />
     <ClCompile Include="WinMain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="External\Vulkan\Include\vulkan\utility\vk_concurrent_unordered_map.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\utility\vk_dispatch_table.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\utility\vk_format_utils.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\utility\vk_safe_struct.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\utility\vk_safe_struct_utils.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\utility\vk_small_containers.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\utility\vk_sparse_range_map.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\utility\vk_struct_helper.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vk_enum_string_helper.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vk_icd.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vk_layer.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vk_platform.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_android.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_beta.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_core.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_directfb.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_enums.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_extension_inspection.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_format_traits.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_fuchsia.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_funcs.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_ggp.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_handles.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_hash.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_hpp_macros.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_ios.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_layer_settings.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_macos.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_metal.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_ohos.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_profiles.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_raii.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_screen.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_shared.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_static_assertions.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_structs.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_to_string.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_vi.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_video.hpp" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_wayland.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_win32.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_xcb.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_xlib.h" />
+    <ClInclude Include="External\Vulkan\Include\vulkan\vulkan_xlib_xrandr.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="External\Vulkan\Lib\vulkan-1.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

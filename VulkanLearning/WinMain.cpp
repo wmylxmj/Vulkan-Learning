@@ -1,4 +1,5 @@
 #include "Windows.h"
+#include "vulkan/vulkan.h"
 
 int WINAPI WinMain(
 	_In_ HINSTANCE hInstance,
