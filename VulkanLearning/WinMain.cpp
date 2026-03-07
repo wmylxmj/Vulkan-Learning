@@ -1,5 +1,7 @@
 #include "Windows.h"
 
+#include <string>
+
 LRESULT CALLBACK MainWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg) {
@@ -38,13 +40,19 @@ int WINAPI WinMain(
 		return -1;
 	}
 
+	// 调整窗口大小以适应客户区
+	RECT rect = { 0 };
+	rect.right = 1280;
+	rect.bottom = 720;
+	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, false); // 调整窗口大小以适应客户区
+
 	// 创建窗口实例
 	HWND hwnd = CreateWindowEx(
 		0, // 拓展窗口样式
 		wc.lpszClassName, // 窗口类名称
 		L"Title", // 窗口标题
 		WS_OVERLAPPEDWINDOW, // 窗口样式参数
-		CW_USEDEFAULT, CW_USEDEFAULT, 1280, 720, // 左上角坐标，宽高
+		CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, // 左上角坐标，宽高
 		0, 0, hInstance, 0 // 父窗口句柄、菜单句柄、应用程序实例句柄和一个指向窗口创建数据的指针
 	);
 
