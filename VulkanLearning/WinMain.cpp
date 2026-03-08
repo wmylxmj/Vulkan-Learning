@@ -1,6 +1,6 @@
-#include "Windows.h"
+#include <Windows.h>
 
-#include <string>
+#include "VulkanUtils.h"
 
 LRESULT CALLBACK MainWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -61,6 +61,9 @@ int WINAPI WinMain(
 		MessageBox(0, L"Create Window Failed.", 0, 0);
 		return -1;
 	}
+
+	// 初始化Vulkan
+	InitVulkan(hwnd, rect.right - rect.left, rect.bottom - rect.top);
 
 	// 显示并更新窗口
 	ShowWindow(hwnd, SW_SHOW);
