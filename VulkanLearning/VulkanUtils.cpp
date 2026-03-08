@@ -16,6 +16,8 @@ PFN_vkDestroyDebugReportCallbackEXT __vkDestroyDebugReportCallbackEXT = nullptr;
 PFN_vkCreateWin32SurfaceKHR __vkCreateWin32SurfaceKHR = nullptr;
 VkDebugReportCallbackEXT s_vulkanDebugReportCallback = nullptr;
 static VkSurfaceKHR s_vulkanSurface = nullptr;
+static VkPhysicalDevice s_vulkanPhysicalDevice = nullptr;
+static int s_queueFamilyIndex = -1;
 
 static bool InitVulkanInstance()
 {
@@ -89,6 +91,60 @@ static bool InitSurface(InitVulkanUserData* inUserData)
 	return true;
 }
 
+static bool InitVulkanPhysicalDevice()
+{
+	uint32_t physicalDeviceCount = 0;
+	vkEnumeratePhysicalDevices(s_vulkanInstance, &physicalDeviceCount, nullptr);
+	if (physicalDeviceCount == 0)
+	{
+		OutputDebugStringA("Failed to find GPUs with Vulkan support.\n");
+		return false;
+	}
+	VkPhysicalDevice* physicalDevices = new VkPhysicalDevice[physicalDeviceCount];
+	vkEnumeratePhysicalDevices(s_vulkanInstance, &physicalDeviceCount, physicalDevices);
+
+	int queueFamilyIndex = -1;
+	for (uint32_t i = 0; i < physicalDeviceCount; i++)
+	{
+		VkPhysicalDevice physicalDevice = physicalDevices[i];
+		uint32_t queueFamilyPropertyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyPropertyCount, nullptr);
+		VkQueueFamilyProperties* queueFamilyProperties = new VkQueueFamilyProperties[queueFamilyPropertyCount];
+		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyPropertyCount, queueFamilyProperties);
+
+		for (uint32_t j = 0; j < queueFamilyPropertyCount; j++)
+		{
+			if (queueFamilyProperties[j].queueCount > 0 &&
+				queueFamilyProperties[j].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			{
+				queueFamilyIndex = j;
+			}
+			if (queueFamilyIndex != -1)
+			{
+				VkBool32 presentSupport = false;
+				vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, j, s_vulkanSurface, &presentSupport);
+				if (presentSupport)
+				{
+					break;
+				}
+			}
+		}
+
+		delete[] queueFamilyProperties;
+
+		if (queueFamilyIndex != -1)
+		{
+			s_vulkanPhysicalDevice = physicalDevice;
+			s_queueFamilyIndex = queueFamilyIndex;
+			delete[] physicalDevices;
+			return true;
+		}
+	}
+
+	delete[] physicalDevices;
+	return false;
+}
+
 bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 {
 	// ´´½¨ Vulkan ÊµÀý
@@ -105,6 +161,10 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	}
 
 	if (!InitSurface((InitVulkanUserData*)inUserData)) {
+		return false;
+	}
+
+	if (!InitVulkanPhysicalDevice()) {
 		return false;
 	}
 
