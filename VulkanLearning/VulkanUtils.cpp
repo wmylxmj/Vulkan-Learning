@@ -11,6 +11,9 @@ static const char* s_enabledExtensions[] = {
 static const char* s_preferredEnabledLayers[] = {
 	"VK_LAYER_KHRONOS_validation",
 };
+PFN_vkCreateDebugReportCallbackEXT __vkCreateDebugReportCallbackEXT = nullptr;
+PFN_vkDestroyDebugReportCallbackEXT __vkDestroyDebugReportCallbackEXT = nullptr;
+PFN_vkCreateWin32SurfaceKHR __vkCreateWin32SurfaceKHR = nullptr;
 
 static bool InitVulkanInstance()
 {
@@ -39,8 +42,16 @@ static bool InitVulkanInstance()
 	return true;
 }
 
-void InitVulkan(void* inUserData, int inWidth, int inHeight)
+bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 {
 	// ´´½¨ Vulkan ÊµÀý
-	InitVulkanInstance();
+	if (!InitVulkanInstance()) {
+		return false;
+	}
+
+	__vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(s_vulkanInstance, "vkCreateDebugReportCallbackEXT");
+	__vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(s_vulkanInstance, "vkDestroyDebugReportCallbackEXT");
+	__vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(s_vulkanInstance, "vkCreateWin32SurfaceKHR");
+
+	return true;
 }
