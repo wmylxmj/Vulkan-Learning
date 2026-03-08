@@ -62,8 +62,10 @@ int WINAPI WinMain(
 		return -1;
 	}
 
+	InitVulkanUserData initVulkanUserData = { hInstance, hwnd };
+
 	// ≥ı ºªØVulkan
-	if (!InitVulkan(hwnd, rect.right - rect.left, rect.bottom - rect.top))
+	if (!InitVulkan(&initVulkanUserData, rect.right - rect.left, rect.bottom - rect.top))
 	{
 		return -1;
 	}

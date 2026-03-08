@@ -15,6 +15,7 @@ PFN_vkCreateDebugReportCallbackEXT __vkCreateDebugReportCallbackEXT = nullptr;
 PFN_vkDestroyDebugReportCallbackEXT __vkDestroyDebugReportCallbackEXT = nullptr;
 PFN_vkCreateWin32SurfaceKHR __vkCreateWin32SurfaceKHR = nullptr;
 VkDebugReportCallbackEXT s_vulkanDebugReportCallback = nullptr;
+static VkSurfaceKHR s_vulkanSurface = nullptr;
 
 static bool InitVulkanInstance()
 {
@@ -73,6 +74,21 @@ static bool InitDebugger()
 	return true;
 }
 
+static bool InitSurface(InitVulkanUserData* inUserData)
+{
+	VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
+	surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	surfaceCreateInfo.hinstance = inUserData->hInstance;
+	surfaceCreateInfo.hwnd = inUserData->hWnd;
+
+	if (__vkCreateWin32SurfaceKHR(s_vulkanInstance, &surfaceCreateInfo, nullptr, &s_vulkanSurface) != VK_SUCCESS)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 {
 	// ´´½¨ Vulkan ÊµÀý
@@ -85,6 +101,10 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	__vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(s_vulkanInstance, "vkCreateWin32SurfaceKHR");
 
 	if (!InitDebugger()) {
+		return false;
+	}
+
+	if (!InitSurface((InitVulkanUserData*)inUserData)) {
 		return false;
 	}
 
