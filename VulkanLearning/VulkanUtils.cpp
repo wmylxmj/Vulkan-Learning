@@ -14,6 +14,7 @@ static const char* s_preferredEnabledLayers[] = {
 PFN_vkCreateDebugReportCallbackEXT __vkCreateDebugReportCallbackEXT = nullptr;
 PFN_vkDestroyDebugReportCallbackEXT __vkDestroyDebugReportCallbackEXT = nullptr;
 PFN_vkCreateWin32SurfaceKHR __vkCreateWin32SurfaceKHR = nullptr;
+VkDebugReportCallbackEXT s_vulkanDebugReportCallback = nullptr;
 
 static bool InitVulkanInstance()
 {
@@ -42,6 +43,36 @@ static bool InitVulkanInstance()
 	return true;
 }
 
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
+	VkDebugReportFlagsEXT flags,
+	VkDebugReportObjectTypeEXT objectType,
+	uint64_t object,
+	size_t location,
+	int32_t messageCode,
+	const char* pLayerPrefix,
+	const char* pMessage,
+	void* pUserData
+) {
+	OutputDebugStringA(pMessage);
+	OutputDebugStringA("\n");
+	return VK_FALSE;
+}
+
+static bool InitDebugger()
+{
+	VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo = {};
+	debugReportCallbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
+	debugReportCallbackCreateInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
+	debugReportCallbackCreateInfo.pfnCallback = DebugCallback;
+
+	if (__vkCreateDebugReportCallbackEXT(s_vulkanInstance, &debugReportCallbackCreateInfo, nullptr, &s_vulkanDebugReportCallback) != VK_SUCCESS)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 {
 	// ´´½¨ Vulkan ÊµÀý
@@ -52,6 +83,10 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	__vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(s_vulkanInstance, "vkCreateDebugReportCallbackEXT");
 	__vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(s_vulkanInstance, "vkDestroyDebugReportCallbackEXT");
 	__vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(s_vulkanInstance, "vkCreateWin32SurfaceKHR");
+
+	if (!InitDebugger()) {
+		return false;
+	}
 
 	return true;
 }

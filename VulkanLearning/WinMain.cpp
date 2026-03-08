@@ -63,7 +63,10 @@ int WINAPI WinMain(
 	}
 
 	// 初始化Vulkan
-	InitVulkan(hwnd, rect.right - rect.left, rect.bottom - rect.top);
+	if (!InitVulkan(hwnd, rect.right - rect.left, rect.bottom - rect.top))
+	{
+		return -1;
+	}
 
 	// 显示并更新窗口
 	ShowWindow(hwnd, SW_SHOW);
