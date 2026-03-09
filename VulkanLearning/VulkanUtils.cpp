@@ -21,6 +21,11 @@ static int s_queueFamilyIndex = -1;
 static VkDevice s_vulkanDevice = nullptr;
 static VkQueue s_vulkanGraphicsQueue = nullptr;
 static VkQueue s_vulkanPresentQueue = nullptr;
+static VkSurfaceCapabilitiesKHR s_vulkanSurfaceCapabilities = {};
+static VkSurfaceFormatKHR* s_vulkanSurfaceFormats = nullptr;
+static uint32_t s_vulkanSurfaceFormatCount = 0;
+static uint32_t s_vulkanPresentModeCount = 0;
+static VkPresentModeKHR* s_vulkanPresentModes = nullptr;
 
 static bool InitVulkanInstance()
 {
@@ -181,6 +186,19 @@ static bool InitVulkanLogicalDevice()
 	return true;
 }
 
+static void InitSurfaceProperties()
+{
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(s_vulkanPhysicalDevice, s_vulkanSurface, &s_vulkanSurfaceCapabilities);
+
+	vkGetPhysicalDeviceSurfaceFormatsKHR(s_vulkanPhysicalDevice, s_vulkanSurface, &s_vulkanSurfaceFormatCount, nullptr);
+	s_vulkanSurfaceFormats = new VkSurfaceFormatKHR[s_vulkanSurfaceFormatCount];
+	vkGetPhysicalDeviceSurfaceFormatsKHR(s_vulkanPhysicalDevice, s_vulkanSurface, &s_vulkanSurfaceFormatCount, s_vulkanSurfaceFormats);
+
+	vkGetPhysicalDeviceSurfacePresentModesKHR(s_vulkanPhysicalDevice, s_vulkanSurface, &s_vulkanPresentModeCount, nullptr);
+	s_vulkanPresentModes = new VkPresentModeKHR[s_vulkanPresentModeCount];
+	vkGetPhysicalDeviceSurfacePresentModesKHR(s_vulkanPhysicalDevice, s_vulkanSurface, &s_vulkanPresentModeCount, s_vulkanPresentModes);
+}
+
 bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 {
 	// ´´½¨ Vulkan ÊµÀý
@@ -207,6 +225,8 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	if (!InitVulkanLogicalDevice()) {
 		return false;
 	}
+
+	InitSurfaceProperties();
 
 	return true;
 }
