@@ -18,6 +18,9 @@ VkDebugReportCallbackEXT s_vulkanDebugReportCallback = nullptr;
 static VkSurfaceKHR s_vulkanSurface = nullptr;
 static VkPhysicalDevice s_vulkanPhysicalDevice = nullptr;
 static int s_queueFamilyIndex = -1;
+static VkDevice s_vulkanDevice = nullptr;
+static VkQueue s_vulkanGraphicsQueue = nullptr;
+static VkQueue s_vulkanPresentQueue = nullptr;
 
 static bool InitVulkanInstance()
 {
@@ -145,6 +148,39 @@ static bool InitVulkanPhysicalDevice()
 	return false;
 }
 
+static bool InitVulkanLogicalDevice()
+{
+	VkDeviceQueueCreateInfo deviceQueueCreateInfo = {};
+	deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	deviceQueueCreateInfo.queueFamilyIndex = s_queueFamilyIndex;
+	deviceQueueCreateInfo.queueCount = 2;
+	float queuePriority[] = { 1.0f, 1.0f };
+	deviceQueueCreateInfo.pQueuePriorities = queuePriority;
+
+	VkDeviceCreateInfo deviceCreateInfo = {};
+	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+	deviceCreateInfo.queueCreateInfoCount = 1;
+	deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
+
+	deviceCreateInfo.enabledLayerCount = 1;
+	deviceCreateInfo.ppEnabledLayerNames = s_preferredEnabledLayers;
+
+	deviceCreateInfo.enabledExtensionCount = 1;
+	const char* deviceExtensions[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions;
+
+	if (vkCreateDevice(s_vulkanPhysicalDevice, &deviceCreateInfo, nullptr, &s_vulkanDevice) != VK_SUCCESS)
+	{
+		return false;
+	}
+
+	vkGetDeviceQueue(s_vulkanDevice, s_queueFamilyIndex, 0, &s_vulkanGraphicsQueue);
+	vkGetDeviceQueue(s_vulkanDevice, s_queueFamilyIndex, 1, &s_vulkanPresentQueue);
+
+	return true;
+}
+
 bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 {
 	// ´´½¨ Vulkan ÊµÀý
@@ -165,6 +201,10 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	}
 
 	if (!InitVulkanPhysicalDevice()) {
+		return false;
+	}
+
+	if (!InitVulkanLogicalDevice()) {
 		return false;
 	}
 
