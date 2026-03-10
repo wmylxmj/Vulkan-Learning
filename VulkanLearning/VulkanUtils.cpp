@@ -27,6 +27,9 @@ static uint32_t s_vulkanSurfaceFormatCount = 0;
 static uint32_t s_vulkanPresentModeCount = 0;
 static VkPresentModeKHR* s_vulkanPresentModes = nullptr;
 static VkSwapchainKHR s_vulkanSwapchain = nullptr;
+static VkImage* s_vulkanSwapchainImages = nullptr;
+static uint32_t s_vulkanSwapchainImageCount = 0;
+static VkImageView* s_vulkanSwapchainImageViews = nullptr;
 
 static bool InitVulkanInstance()
 {
@@ -233,6 +236,29 @@ void InitSwapchain()
 	vkCreateSwapchainKHR(s_vulkanDevice, &swapchainCreateInfo, nullptr, &s_vulkanSwapchain);
 }
 
+void InitSwapChainRenderTarget()
+{
+	vkGetSwapchainImagesKHR(s_vulkanDevice, s_vulkanSwapchain, &s_vulkanSwapchainImageCount, nullptr);
+	s_vulkanSwapchainImages = new VkImage[s_vulkanSwapchainImageCount];
+	vkGetSwapchainImagesKHR(s_vulkanDevice, s_vulkanSwapchain, &s_vulkanSwapchainImageCount, s_vulkanSwapchainImages);
+
+	s_vulkanSwapchainImageViews = new VkImageView[s_vulkanSwapchainImageCount];
+	for (uint32_t i = 0; i < s_vulkanSwapchainImageCount; ++i)
+	{
+		VkImageViewCreateInfo imageViewCreateInfo = {};
+		imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+		imageViewCreateInfo.image = s_vulkanSwapchainImages[i];
+		imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+		imageViewCreateInfo.subresourceRange.layerCount = 1;
+		imageViewCreateInfo.subresourceRange.levelCount = 1;
+		vkCreateImageView(s_vulkanDevice, &imageViewCreateInfo, nullptr, &s_vulkanSwapchainImageViews[i]);
+	}
+}
+
 bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 {
 	// ´´½¨ Vulkan ÊµÀý
@@ -263,6 +289,8 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	InitSurfaceProperties();
 
 	InitSwapchain();
+
+	InitSwapChainRenderTarget();
 
 	return true;
 }
