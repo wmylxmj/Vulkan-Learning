@@ -26,6 +26,7 @@ static VkSurfaceFormatKHR* s_vulkanSurfaceFormats = nullptr;
 static uint32_t s_vulkanSurfaceFormatCount = 0;
 static uint32_t s_vulkanPresentModeCount = 0;
 static VkPresentModeKHR* s_vulkanPresentModes = nullptr;
+static VkSwapchainKHR s_vulkanSwapchain = nullptr;
 
 static bool InitVulkanInstance()
 {
@@ -199,6 +200,39 @@ static void InitSurfaceProperties()
 	vkGetPhysicalDeviceSurfacePresentModesKHR(s_vulkanPhysicalDevice, s_vulkanSurface, &s_vulkanPresentModeCount, s_vulkanPresentModes);
 }
 
+void InitSwapchain()
+{
+	VkSurfaceFormatKHR selectedSurfaceFormat = {};
+	for (int i = 0; i < s_vulkanSurfaceFormatCount; ++i)
+	{
+		if (s_vulkanSurfaceFormats[i].format == VK_FORMAT_B8G8R8A8_UNORM &&
+			s_vulkanSurfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) // Gamma color space
+		{
+			selectedSurfaceFormat = s_vulkanSurfaceFormats[i];
+			break;
+		}
+	}
+	VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
+	swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	swapchainCreateInfo.imageArrayLayers = 1;
+	swapchainCreateInfo.imageColorSpace = selectedSurfaceFormat.colorSpace;
+	swapchainCreateInfo.imageFormat = selectedSurfaceFormat.format;
+	swapchainCreateInfo.imageExtent.width = 1280u;
+	swapchainCreateInfo.imageExtent.height = 720u;
+	swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE; // 互斥访问
+	swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; // 颜色附件
+	swapchainCreateInfo.minImageCount = s_vulkanSurfaceCapabilities.minImageCount + 1; // 最小图像数量加一
+	uint32_t queueFamilyIndices[] = { (uint32_t)s_queueFamilyIndex };
+	swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
+	swapchainCreateInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR; // FIFO 模式
+	swapchainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR; // 不进行预变换
+	swapchainCreateInfo.queueFamilyIndexCount = 1;
+	swapchainCreateInfo.surface = s_vulkanSurface;
+
+	vkCreateSwapchainKHR(s_vulkanDevice, &swapchainCreateInfo, nullptr, &s_vulkanSwapchain);
+}
+
 bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 {
 	// 创建 Vulkan 实例
@@ -227,6 +261,8 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	}
 
 	InitSurfaceProperties();
+
+	InitSwapchain();
 
 	return true;
 }
