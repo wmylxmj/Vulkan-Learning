@@ -30,6 +30,7 @@ static VkSwapchainKHR s_vulkanSwapchain = nullptr;
 static VkImage* s_vulkanSwapchainImages = nullptr;
 static uint32_t s_vulkanSwapchainImageCount = 0;
 static VkImageView* s_vulkanSwapchainImageViews = nullptr;
+static Texture* s_vulkanSwapchainDSRTs = nullptr;
 
 static bool InitVulkanInstance()
 {
@@ -236,6 +237,23 @@ void InitSwapchain()
 	vkCreateSwapchainKHR(s_vulkanDevice, &swapchainCreateInfo, nullptr, &s_vulkanSwapchain);
 }
 
+VkImageView GenImageView2D(VkImage inImage, VkFormat inFormat, VkImageAspectFlags inAspectFlags)
+{
+	VkImageViewCreateInfo imageViewCreateInfo = {};
+	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	imageViewCreateInfo.format = inFormat;
+	imageViewCreateInfo.image = inImage;
+	imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	imageViewCreateInfo.subresourceRange.aspectMask = inAspectFlags;
+	imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+	imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+	imageViewCreateInfo.subresourceRange.layerCount = 1;
+	imageViewCreateInfo.subresourceRange.levelCount = 1;
+	VkImageView imageView;
+	vkCreateImageView(s_vulkanDevice, &imageViewCreateInfo, nullptr, &imageView);
+	return imageView;
+}
+
 void InitSwapChainRenderTarget()
 {
 	vkGetSwapchainImagesKHR(s_vulkanDevice, s_vulkanSwapchain, &s_vulkanSwapchainImageCount, nullptr);
@@ -245,18 +263,69 @@ void InitSwapChainRenderTarget()
 	s_vulkanSwapchainImageViews = new VkImageView[s_vulkanSwapchainImageCount];
 	for (uint32_t i = 0; i < s_vulkanSwapchainImageCount; ++i)
 	{
-		VkImageViewCreateInfo imageViewCreateInfo = {};
-		imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		imageViewCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
-		imageViewCreateInfo.image = s_vulkanSwapchainImages[i];
-		imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-		imageViewCreateInfo.subresourceRange.layerCount = 1;
-		imageViewCreateInfo.subresourceRange.levelCount = 1;
-		vkCreateImageView(s_vulkanDevice, &imageViewCreateInfo, nullptr, &s_vulkanSwapchainImageViews[i]);
+		s_vulkanSwapchainImageViews[i] = GenImageView2D(
+			s_vulkanSwapchainImages[i],
+			VK_FORMAT_B8G8R8A8_UNORM,
+			VK_IMAGE_ASPECT_COLOR_BIT
+		);
 	}
+}
+
+void GenImage(Texture* inOutTexture, uint32_t inWidth, uint32_t inHeight, VkFormat inFormat, VkImageUsageFlags inUsageFlags)
+{
+	VkImageCreateInfo imageCreateInfo = {};
+	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageCreateInfo.format = inFormat;
+	imageCreateInfo.extent.width = inWidth;
+	imageCreateInfo.extent.height = inHeight;
+	imageCreateInfo.extent.depth = 1;
+	imageCreateInfo.mipLevels = 1;
+	imageCreateInfo.arrayLayers = 1;
+	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCreateInfo.usage = inUsageFlags;
+	vkCreateImage(s_vulkanDevice, &imageCreateInfo, nullptr, &inOutTexture->image);
+
+	VkMemoryRequirements memoryRequirements;
+	vkGetImageMemoryRequirements(s_vulkanDevice, inOutTexture->image, &memoryRequirements);
+	VkMemoryAllocateInfo memoryAllocateInfo = {};
+	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	memoryAllocateInfo.allocationSize = memoryRequirements.size;
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	vkGetPhysicalDeviceMemoryProperties(s_vulkanPhysicalDevice, &memoryProperties);
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i)
+	{
+		if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
+			(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) // от╢Ф
+		{
+			memoryAllocateInfo.memoryTypeIndex = i;
+			break;
+		}
+	}
+	vkAllocateMemory(s_vulkanDevice, &memoryAllocateInfo, nullptr, &inOutTexture->memory);
+	vkBindImageMemory(s_vulkanDevice, inOutTexture->image, inOutTexture->memory, 0);
+}
+
+void InitSwapChainDSRT()
+{
+	s_vulkanSwapchainDSRTs = new Texture[1];
+	s_vulkanSwapchainDSRTs->format = VK_FORMAT_D24_UNORM_S8_UINT;
+	s_vulkanSwapchainDSRTs->aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+	GenImage(
+		s_vulkanSwapchainDSRTs,
+		s_vulkanSurfaceCapabilities.currentExtent.width,
+		s_vulkanSurfaceCapabilities.currentExtent.height,
+		s_vulkanSwapchainDSRTs->format,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+	);
+	s_vulkanSwapchainDSRTs->imageView = GenImageView2D(
+		s_vulkanSwapchainDSRTs->image,
+		s_vulkanSwapchainDSRTs->format,
+		s_vulkanSwapchainDSRTs->aspectFlags
+	);
 }
 
 bool InitVulkan(void* inUserData, int inWidth, int inHeight)
@@ -291,6 +360,8 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	InitSwapchain();
 
 	InitSwapChainRenderTarget();
+
+	InitSwapChainDSRT();
 
 	return true;
 }
