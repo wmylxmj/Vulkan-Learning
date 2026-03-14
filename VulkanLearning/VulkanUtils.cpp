@@ -31,6 +31,7 @@ static VkImage* s_vulkanSwapchainImages = nullptr;
 static uint32_t s_vulkanSwapchainImageCount = 0;
 static VkImageView* s_vulkanSwapchainImageViews = nullptr;
 static Texture* s_vulkanSwapchainDSRTs = nullptr;
+static VkRenderPass s_vulkanSwapchainRenderPass = nullptr;
 
 static bool InitVulkanInstance()
 {
@@ -328,6 +329,53 @@ void InitSwapChainDSRT()
 	);
 }
 
+void InitSwapChainRenderPass()
+{
+	VkAttachmentDescription attachmentDescriptions[2] = {};
+	// Color Buffer
+	attachmentDescriptions[0].format = VK_FORMAT_B8G8R8A8_UNORM;
+	attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachmentDescriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachmentDescriptions[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachmentDescriptions[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachmentDescriptions[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachmentDescriptions[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachmentDescriptions[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	// Depth-Stencil Buffer
+	attachmentDescriptions[1].format = VK_FORMAT_D24_UNORM_S8_UINT;
+	attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachmentDescriptions[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachmentDescriptions[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachmentDescriptions[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachmentDescriptions[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachmentDescriptions[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachmentDescriptions[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference colorAttachmentReference = {};
+	colorAttachmentReference.attachment = 0;
+	colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference depthStencilAttachmentReference = {};
+	depthStencilAttachmentReference.attachment = 1;
+	depthStencilAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpassDescription = {};
+	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpassDescription.colorAttachmentCount = 1;
+	subpassDescription.pColorAttachments = &colorAttachmentReference;
+	subpassDescription.pDepthStencilAttachment = &depthStencilAttachmentReference;
+
+	VkRenderPassCreateInfo renderPassCreateInfo = {};
+	renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassCreateInfo.attachmentCount = 2;
+	renderPassCreateInfo.pAttachments = attachmentDescriptions;
+	renderPassCreateInfo.subpassCount = 1;
+	renderPassCreateInfo.pSubpasses = &subpassDescription;
+
+	vkCreateRenderPass(s_vulkanDevice, &renderPassCreateInfo, nullptr, &s_vulkanSwapchainRenderPass);
+}
+
 bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 {
 	// ´´½¨ Vulkan ÊµÀý
@@ -362,6 +410,8 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	InitSwapChainRenderTarget();
 
 	InitSwapChainDSRT();
+
+	InitSwapChainRenderPass();
 
 	return true;
 }
