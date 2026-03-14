@@ -35,6 +35,8 @@ static VkRenderPass s_vulkanSwapchainRenderPass = nullptr;
 static VkFramebuffer s_vulkanSwapchainFramebuffers[2] = { nullptr };
 static VkCommandPool s_vulkanCommandPool = nullptr;
 static VkSemaphore s_readyToRenderSemaphore = nullptr;
+static VkSemaphore s_readyToPresentSemaphore = nullptr;
+static VkCommandBuffer s_vulkanCommandBuffer = nullptr;
 
 static bool InitVulkanInstance()
 {
@@ -453,12 +455,73 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
 	vkCreateSemaphore(s_vulkanDevice, &semaphoreCreateInfo, nullptr, &s_readyToRenderSemaphore);
+	vkCreateSemaphore(s_vulkanDevice, &semaphoreCreateInfo, nullptr, &s_readyToPresentSemaphore);
 
 	return true;
 }
 
 void RenderOneFrame()
 {
-	uint32_t nextFrameBufferToRenderIndex = 0;
+	static uint32_t nextFrameBufferToRenderIndex = 0;
 	vkAcquireNextImageKHR(s_vulkanDevice, s_vulkanSwapchain, 1000000, s_readyToRenderSemaphore, nullptr, &nextFrameBufferToRenderIndex);
+
+	VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
+	commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	commandBufferAllocateInfo.commandBufferCount = 1;
+	commandBufferAllocateInfo.commandPool = s_vulkanCommandPool;
+	commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	vkAllocateCommandBuffers(s_vulkanDevice, &commandBufferAllocateInfo, &s_vulkanCommandBuffer);
+	// Begin Command Buffer
+	VkCommandBufferBeginInfo commandBufferBeginInfo = {};
+	commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // 一次性提交
+	vkBeginCommandBuffer(s_vulkanCommandBuffer, &commandBufferBeginInfo);
+	// Begin Render Pass
+	VkClearValue clearValues[2] = {};
+	clearValues[0].color = { 0.1f, 0.4f, 0.6f, 1.0f };
+	clearValues[1].depthStencil = { 1.0f, 0u };
+
+	VkRenderPassBeginInfo renderPassBeginInfo = {};
+	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassBeginInfo.clearValueCount = 2;
+	renderPassBeginInfo.framebuffer = s_vulkanSwapchainFramebuffers[nextFrameBufferToRenderIndex];
+	renderPassBeginInfo.pClearValues = clearValues;
+	renderPassBeginInfo.renderArea.offset = { 0, 0 };
+	renderPassBeginInfo.renderArea.extent = s_vulkanSurfaceCapabilities.currentExtent;
+	renderPassBeginInfo.renderPass = s_vulkanSwapchainRenderPass;
+	vkCmdBeginRenderPass(s_vulkanCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	// End Render Pass
+	vkCmdEndRenderPass(s_vulkanCommandBuffer);
+	// End Command Buffer
+	vkEndCommandBuffer(s_vulkanCommandBuffer);
+
+	// Submit Command Buffer
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &s_vulkanCommandBuffer;
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &s_readyToRenderSemaphore;
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &s_readyToPresentSemaphore;
+	vkQueueSubmit(s_vulkanGraphicsQueue, 1, &submitInfo, nullptr);
+
+	// Present
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = &s_readyToPresentSemaphore;
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = &s_vulkanSwapchain;
+	presentInfo.pImageIndices = &nextFrameBufferToRenderIndex;
+	vkQueuePresentKHR(s_vulkanPresentQueue, &presentInfo);
+	vkQueueWaitIdle(s_vulkanPresentQueue);
+
+	nextFrameBufferToRenderIndex = (nextFrameBufferToRenderIndex + 1) % s_vulkanSwapchainImageCount;
+
+	vkFreeCommandBuffers(s_vulkanDevice, s_vulkanCommandPool, 1, &s_vulkanCommandBuffer);
 }
