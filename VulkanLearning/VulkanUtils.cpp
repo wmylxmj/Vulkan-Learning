@@ -32,6 +32,7 @@ static uint32_t s_vulkanSwapchainImageCount = 0;
 static VkImageView* s_vulkanSwapchainImageViews = nullptr;
 static Texture* s_vulkanSwapchainDSRTs = nullptr;
 static VkRenderPass s_vulkanSwapchainRenderPass = nullptr;
+static VkFramebuffer s_vulkanSwapchainFramebuffers[2] = { nullptr };
 
 static bool InitVulkanInstance()
 {
@@ -376,6 +377,26 @@ void InitSwapChainRenderPass()
 	vkCreateRenderPass(s_vulkanDevice, &renderPassCreateInfo, nullptr, &s_vulkanSwapchainRenderPass);
 }
 
+static void InitSwapchainFBO()
+{
+	for (int i = 0; i < 2; ++i) {
+		VkImageView attachments[2] = {};
+		attachments[0] = s_vulkanSwapchainImageViews[i];
+		attachments[1] = s_vulkanSwapchainDSRTs[0].imageView;
+
+		VkFramebufferCreateInfo framebufferCreateInfo = {};
+		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferCreateInfo.renderPass = s_vulkanSwapchainRenderPass;
+		framebufferCreateInfo.attachmentCount = 2;
+		framebufferCreateInfo.pAttachments = attachments;
+		framebufferCreateInfo.width = s_vulkanSurfaceCapabilities.currentExtent.width;
+		framebufferCreateInfo.height = s_vulkanSurfaceCapabilities.currentExtent.height;
+		framebufferCreateInfo.layers = 1;
+
+		vkCreateFramebuffer(s_vulkanDevice, &framebufferCreateInfo, nullptr, &s_vulkanSwapchainFramebuffers[i]);
+	}
+}
+
 bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 {
 	// ´´½¨ Vulkan ÊµÀý
@@ -412,6 +433,8 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	InitSwapChainDSRT();
 
 	InitSwapChainRenderPass();
+
+	InitSwapchainFBO();
 
 	return true;
 }
