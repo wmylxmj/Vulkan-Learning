@@ -87,6 +87,11 @@ int WINAPI WinMain(
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+		else
+		{
+			// Rendering code goes here
+			RenderOneFrame();
+		}
 	}
 
 	return 0;

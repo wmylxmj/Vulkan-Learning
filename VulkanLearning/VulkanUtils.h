@@ -30,3 +30,5 @@ struct Texture
 };
 
 bool InitVulkan(void* inUserData, int inWidth, int inHeight);
+
+void RenderOneFrame();

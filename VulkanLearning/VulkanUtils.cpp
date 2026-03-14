@@ -33,6 +33,8 @@ static VkImageView* s_vulkanSwapchainImageViews = nullptr;
 static Texture* s_vulkanSwapchainDSRTs = nullptr;
 static VkRenderPass s_vulkanSwapchainRenderPass = nullptr;
 static VkFramebuffer s_vulkanSwapchainFramebuffers[2] = { nullptr };
+static VkCommandPool s_vulkanCommandPool = nullptr;
+static VkSemaphore s_readyToRenderSemaphore = nullptr;
 
 static bool InitVulkanInstance()
 {
@@ -397,6 +399,15 @@ static void InitSwapchainFBO()
 	}
 }
 
+static void InitCommandPool()
+{
+	VkCommandPoolCreateInfo commandPoolCreateInfo = {};
+	commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	commandPoolCreateInfo.queueFamilyIndex = s_queueFamilyIndex;
+	commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // 允许重置命令缓冲区
+	vkCreateCommandPool(s_vulkanDevice, &commandPoolCreateInfo, nullptr, &s_vulkanCommandPool);
+}
+
 bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 {
 	// 创建 Vulkan 实例
@@ -436,5 +447,18 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 
 	InitSwapchainFBO();
 
+	InitCommandPool();
+
+	VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	vkCreateSemaphore(s_vulkanDevice, &semaphoreCreateInfo, nullptr, &s_readyToRenderSemaphore);
+
 	return true;
+}
+
+void RenderOneFrame()
+{
+	uint32_t nextFrameBufferToRenderIndex = 0;
+	vkAcquireNextImageKHR(s_vulkanDevice, s_vulkanSwapchain, 1000000, s_readyToRenderSemaphore, nullptr, &nextFrameBufferToRenderIndex);
 }
