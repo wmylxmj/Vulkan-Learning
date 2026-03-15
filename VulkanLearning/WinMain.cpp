@@ -1,6 +1,7 @@
 #include <Windows.h>
 
 #include "VulkanUtils.h"
+#include "Scene.h"
 
 LRESULT CALLBACK MainWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -70,6 +71,8 @@ int WINAPI WinMain(
 		return -1;
 	}
 
+	InitScene(rect.right - rect.left, rect.bottom - rect.top);
+
 	// 显示并更新窗口
 	ShowWindow(hwnd, SW_SHOW);
 	UpdateWindow(hwnd);
@@ -90,7 +93,7 @@ int WINAPI WinMain(
 		else
 		{
 			// Rendering code goes here
-			RenderOneFrame();
+			RenderOneFrame(0);
 		}
 	}
 

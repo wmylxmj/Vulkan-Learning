@@ -1,6 +1,7 @@
 #include "VulkanUtils.h"
 
 #include <string>
+#include "Scene.h"
 
 #pragma comment(lib, "vulkan-1.lib")
 
@@ -39,7 +40,7 @@ static VkFramebuffer s_vulkanSwapchainFramebuffers[2] = { nullptr };
 static VkCommandPool s_vulkanCommandPool = nullptr;
 static VkSemaphore s_readyToRenderSemaphore = nullptr;
 static VkSemaphore s_readyToPresentSemaphore = nullptr;
-static VkCommandBuffer s_vulkanCommandBuffer = nullptr;
+static uint32_t s_currentFrameBufferToRenderIndex = 0;
 
 static bool InitVulkanInstance()
 {
@@ -505,49 +506,57 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	return true;
 }
 
-void RenderOneFrame()
+VkCommandBuffer CreateCommandBuffer(VkCommandBufferLevel inCommandBufferLevel)
 {
-	static uint32_t nextFrameBufferToRenderIndex = 0;
-	vkAcquireNextImageKHR(s_vulkanDevice, s_vulkanSwapchain, 1000000, s_readyToRenderSemaphore, nullptr, &nextFrameBufferToRenderIndex);
-
+	VkCommandBuffer commandBuffer = nullptr;
 	VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
 	commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	commandBufferAllocateInfo.commandBufferCount = 1;
 	commandBufferAllocateInfo.commandPool = s_vulkanCommandPool;
-	commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	commandBufferAllocateInfo.level = inCommandBufferLevel;
+	vkAllocateCommandBuffers(s_vulkanDevice, &commandBufferAllocateInfo, &commandBuffer);
+	return commandBuffer;
+}
 
-	vkAllocateCommandBuffers(s_vulkanDevice, &commandBufferAllocateInfo, &s_vulkanCommandBuffer);
-	// Begin Command Buffer
+void BeginCommandBuffer(VkCommandBuffer inCommandBuffer, VkCommandBufferUsageFlags inUsageFlags)
+{
 	VkCommandBufferBeginInfo commandBufferBeginInfo = {};
 	commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // 一次性提交
-	vkBeginCommandBuffer(s_vulkanCommandBuffer, &commandBufferBeginInfo);
-	// Begin Render Pass
+	commandBufferBeginInfo.flags = inUsageFlags;
+	vkBeginCommandBuffer(inCommandBuffer, &commandBufferBeginInfo);
+}
+
+void BeginSwapChainRenderPass(VkCommandBuffer inCommandBuffer)
+{
+	vkAcquireNextImageKHR(s_vulkanDevice, s_vulkanSwapchain, 1000000, s_readyToRenderSemaphore, nullptr, &s_currentFrameBufferToRenderIndex);
+
 	VkClearValue clearValues[2] = {};
 	clearValues[0].color = { 0.1f, 0.4f, 0.6f, 1.0f };
 	clearValues[1].depthStencil = { 1.0f, 0u };
-
 	VkRenderPassBeginInfo renderPassBeginInfo = {};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassBeginInfo.clearValueCount = 2;
-	renderPassBeginInfo.framebuffer = s_vulkanSwapchainFramebuffers[nextFrameBufferToRenderIndex];
+	renderPassBeginInfo.framebuffer = s_vulkanSwapchainFramebuffers[s_currentFrameBufferToRenderIndex];
 	renderPassBeginInfo.pClearValues = clearValues;
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = s_vulkanSurfaceCapabilities.currentExtent;
 	renderPassBeginInfo.renderPass = s_vulkanSwapchainRenderPass;
-	vkCmdBeginRenderPass(s_vulkanCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(inCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
 
+void EndSwapChainRenderPass(VkCommandBuffer inCommandBuffer)
+{
 	// End Render Pass
-	vkCmdEndRenderPass(s_vulkanCommandBuffer);
+	vkCmdEndRenderPass(inCommandBuffer);
 	// End Command Buffer
-	vkEndCommandBuffer(s_vulkanCommandBuffer);
+	vkEndCommandBuffer(inCommandBuffer);
 
 	// Submit Command Buffer
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &s_vulkanCommandBuffer;
+	submitInfo.pCommandBuffers = &inCommandBuffer;
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = &s_readyToRenderSemaphore;
 	submitInfo.pWaitDstStageMask = waitStages;
@@ -562,11 +571,11 @@ void RenderOneFrame()
 	presentInfo.pWaitSemaphores = &s_readyToPresentSemaphore;
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = &s_vulkanSwapchain;
-	presentInfo.pImageIndices = &nextFrameBufferToRenderIndex;
+	presentInfo.pImageIndices = &s_currentFrameBufferToRenderIndex;
 	vkQueuePresentKHR(s_vulkanPresentQueue, &presentInfo);
 	vkQueueWaitIdle(s_vulkanPresentQueue);
 
-	nextFrameBufferToRenderIndex = (nextFrameBufferToRenderIndex + 1) % s_vulkanSwapchainImageCount;
+	s_currentFrameBufferToRenderIndex = (s_currentFrameBufferToRenderIndex + 1) % s_vulkanSwapchainImageCount;
 
-	vkFreeCommandBuffers(s_vulkanDevice, s_vulkanCommandPool, 1, &s_vulkanCommandBuffer);
+	vkFreeCommandBuffers(s_vulkanDevice, s_vulkanCommandPool, 1, &inCommandBuffer);
 }

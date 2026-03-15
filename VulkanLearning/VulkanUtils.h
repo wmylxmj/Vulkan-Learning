@@ -31,4 +31,8 @@ struct Texture
 
 bool InitVulkan(void* inUserData, int inWidth, int inHeight);
 
-void RenderOneFrame();
+VkCommandBuffer CreateCommandBuffer(VkCommandBufferLevel inCommandBufferLevel = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+void BeginCommandBuffer(VkCommandBuffer inCommandBuffer, VkCommandBufferUsageFlags inUsageFlags);
+void BeginSwapChainRenderPass(VkCommandBuffer inCommandBuffer);
+void EndSwapChainRenderPass(VkCommandBuffer inCommandBuffer);
