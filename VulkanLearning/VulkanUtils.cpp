@@ -1,5 +1,7 @@
 #include "VulkanUtils.h"
 
+#include <string>
+
 #pragma comment(lib, "vulkan-1.lib")
 
 static VkInstance s_vulkanInstance = nullptr;
@@ -8,9 +10,9 @@ static const char* s_enabledExtensions[] = {
 	VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 	VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
 };
-static const char* s_preferredEnabledLayers[] = {
-	"VK_LAYER_KHRONOS_validation",
-};
+static char** s_ppPreferredEnabledLayers = nullptr;
+static int s_preferredEnabledLayerCount = 0;
+
 PFN_vkCreateDebugReportCallbackEXT __vkCreateDebugReportCallbackEXT = nullptr;
 PFN_vkDestroyDebugReportCallbackEXT __vkDestroyDebugReportCallbackEXT = nullptr;
 PFN_vkCreateWin32SurfaceKHR __vkCreateWin32SurfaceKHR = nullptr;
@@ -53,8 +55,26 @@ static bool InitVulkanInstance()
 	vkInstanceCreateInfo.pApplicationInfo = &vkApplicationInfo;
 	vkInstanceCreateInfo.enabledExtensionCount = 3;
 	vkInstanceCreateInfo.ppEnabledExtensionNames = s_enabledExtensions;
-	vkInstanceCreateInfo.enabledLayerCount = 1;
-	vkInstanceCreateInfo.ppEnabledLayerNames = s_preferredEnabledLayers;
+
+	uint32_t layerCount = 0;
+	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+	VkLayerProperties* layerProperties = new VkLayerProperties[layerCount];
+	vkEnumerateInstanceLayerProperties(&layerCount, layerProperties);
+
+	s_ppPreferredEnabledLayers = new char* [layerCount];
+	for (int i = 0; i < layerCount; ++i)
+	{
+		if (strstr(layerProperties[i].layerName, "validation"))
+		{
+			s_ppPreferredEnabledLayers[s_preferredEnabledLayerCount] = new char[strlen(layerProperties[i].layerName) + 1];
+			strcpy_s(s_ppPreferredEnabledLayers[s_preferredEnabledLayerCount], strlen(layerProperties[i].layerName) + 1, layerProperties[i].layerName);
+		}
+	}
+
+#ifdef _DEBUG
+	vkInstanceCreateInfo.enabledLayerCount = s_preferredEnabledLayerCount;
+	vkInstanceCreateInfo.ppEnabledLayerNames = s_ppPreferredEnabledLayers;
+#endif
 
 	if (vkCreateInstance(&vkInstanceCreateInfo, nullptr, &s_vulkanInstance) != VK_SUCCESS)
 	{
@@ -123,7 +143,7 @@ static bool InitVulkanPhysicalDevice()
 	vkEnumeratePhysicalDevices(s_vulkanInstance, &physicalDeviceCount, physicalDevices);
 
 	int queueFamilyIndex = -1;
-	for (uint32_t i = 0; i < physicalDeviceCount; i++)
+	for (uint32_t i = 0; i < physicalDeviceCount; ++i)
 	{
 		VkPhysicalDevice physicalDevice = physicalDevices[i];
 		uint32_t queueFamilyPropertyCount = 0;
@@ -179,8 +199,10 @@ static bool InitVulkanLogicalDevice()
 	deviceCreateInfo.queueCreateInfoCount = 1;
 	deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
 
-	deviceCreateInfo.enabledLayerCount = 1;
-	deviceCreateInfo.ppEnabledLayerNames = s_preferredEnabledLayers;
+#ifdef _DEBUG
+	deviceCreateInfo.enabledLayerCount = s_preferredEnabledLayerCount;
+	deviceCreateInfo.ppEnabledLayerNames = s_ppPreferredEnabledLayers;
+#endif
 
 	deviceCreateInfo.enabledExtensionCount = 1;
 	const char* deviceExtensions[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
