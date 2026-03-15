@@ -19,7 +19,8 @@ PFN_vkCreateWin32SurfaceKHR __vkCreateWin32SurfaceKHR = nullptr;
 VkDebugReportCallbackEXT s_vulkanDebugReportCallback = nullptr;
 static VkSurfaceKHR s_vulkanSurface = nullptr;
 static VkPhysicalDevice s_vulkanPhysicalDevice = nullptr;
-static int s_queueFamilyIndex = -1;
+static uint32_t s_graphicsQueueFamilyIndex = 0;
+static uint32_t s_presentQueueFamilyIndex = 0;
 static VkDevice s_vulkanDevice = nullptr;
 static VkQueue s_vulkanGraphicsQueue = nullptr;
 static VkQueue s_vulkanPresentQueue = nullptr;
@@ -142,7 +143,8 @@ static bool InitVulkanPhysicalDevice()
 	VkPhysicalDevice* physicalDevices = new VkPhysicalDevice[physicalDeviceCount];
 	vkEnumeratePhysicalDevices(s_vulkanInstance, &physicalDeviceCount, physicalDevices);
 
-	int queueFamilyIndex = -1;
+	int graphicsQueueFamilyIndex = -1;
+	int presentQueueFamilyIndex = -1;
 	for (uint32_t i = 0; i < physicalDeviceCount; ++i)
 	{
 		VkPhysicalDevice physicalDevice = physicalDevices[i];
@@ -156,27 +158,24 @@ static bool InitVulkanPhysicalDevice()
 			if (queueFamilyProperties[j].queueCount > 0 &&
 				queueFamilyProperties[j].queueFlags & VK_QUEUE_GRAPHICS_BIT)
 			{
-				queueFamilyIndex = j;
+				graphicsQueueFamilyIndex = j;
 			}
-			if (queueFamilyIndex != -1)
+			VkBool32 presentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, j, s_vulkanSurface, &presentSupport);
+			if (queueFamilyProperties[j].queueCount > 0 && presentSupport)
 			{
-				VkBool32 presentSupport = false;
-				vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, j, s_vulkanSurface, &presentSupport);
-				if (presentSupport)
-				{
-					break;
-				}
+				presentQueueFamilyIndex = j;
 			}
-		}
+			if (graphicsQueueFamilyIndex != -1 && presentQueueFamilyIndex != -1)
+			{
+				s_vulkanPhysicalDevice = physicalDevice;
+				s_graphicsQueueFamilyIndex = uint32_t(graphicsQueueFamilyIndex);
+				s_presentQueueFamilyIndex = uint32_t(presentQueueFamilyIndex);
 
-		delete[] queueFamilyProperties;
-
-		if (queueFamilyIndex != -1)
-		{
-			s_vulkanPhysicalDevice = physicalDevice;
-			s_queueFamilyIndex = queueFamilyIndex;
-			delete[] physicalDevices;
-			return true;
+				delete[] queueFamilyProperties;
+				delete[] physicalDevices;
+				return true;
+			}
 		}
 	}
 
@@ -186,18 +185,33 @@ static bool InitVulkanPhysicalDevice()
 
 static bool InitVulkanLogicalDevice()
 {
-	VkDeviceQueueCreateInfo deviceQueueCreateInfo = {};
-	deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	deviceQueueCreateInfo.queueFamilyIndex = s_queueFamilyIndex;
-	deviceQueueCreateInfo.queueCount = 2;
-	float queuePriority[] = { 1.0f, 1.0f };
-	deviceQueueCreateInfo.pQueuePriorities = queuePriority;
+	float queuePriority = 1.0f;
+	int queueCreateInfoCount = 2;
+	VkDeviceQueueCreateInfo deviceQueueCreateInfos[2] = {};
+	if (s_graphicsQueueFamilyIndex == s_presentQueueFamilyIndex) {
+		deviceQueueCreateInfos[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		deviceQueueCreateInfos[0].queueFamilyIndex = s_graphicsQueueFamilyIndex;
+		deviceQueueCreateInfos[0].queueCount = 1;
+		deviceQueueCreateInfos[0].pQueuePriorities = &queuePriority;
+		queueCreateInfoCount = 1;
+	}
+	else {
+		deviceQueueCreateInfos[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		deviceQueueCreateInfos[0].queueFamilyIndex = s_graphicsQueueFamilyIndex;
+		deviceQueueCreateInfos[0].queueCount = 1;
+		deviceQueueCreateInfos[0].pQueuePriorities = &queuePriority;
+		deviceQueueCreateInfos[1].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		deviceQueueCreateInfos[1].queueFamilyIndex = s_presentQueueFamilyIndex;
+		deviceQueueCreateInfos[1].queueCount = 1;
+		deviceQueueCreateInfos[1].pQueuePriorities = &queuePriority;
+		queueCreateInfoCount = 2;
+	}
 
 	VkDeviceCreateInfo deviceCreateInfo = {};
 	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-	deviceCreateInfo.queueCreateInfoCount = 1;
-	deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
+	deviceCreateInfo.queueCreateInfoCount = queueCreateInfoCount;
+	deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos;
 
 #ifdef _DEBUG
 	deviceCreateInfo.enabledLayerCount = s_preferredEnabledLayerCount;
@@ -213,8 +227,8 @@ static bool InitVulkanLogicalDevice()
 		return false;
 	}
 
-	vkGetDeviceQueue(s_vulkanDevice, s_queueFamilyIndex, 0, &s_vulkanGraphicsQueue);
-	vkGetDeviceQueue(s_vulkanDevice, s_queueFamilyIndex, 1, &s_vulkanPresentQueue);
+	vkGetDeviceQueue(s_vulkanDevice, s_graphicsQueueFamilyIndex, 0, &s_vulkanGraphicsQueue);
+	vkGetDeviceQueue(s_vulkanDevice, s_presentQueueFamilyIndex, 0, &s_vulkanPresentQueue);
 
 	return true;
 }
@@ -255,11 +269,20 @@ void InitSwapchain()
 	swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE; // 互斥访问
 	swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; // 颜色附件
 	swapchainCreateInfo.minImageCount = s_vulkanSurfaceCapabilities.minImageCount + 1; // 最小图像数量加一
-	uint32_t queueFamilyIndices[] = { (uint32_t)s_queueFamilyIndex };
+	uint32_t queueFamilyIndices[2] = { 0 };
+	uint32_t queueFamilyIndexCount = 2;
+	if (s_graphicsQueueFamilyIndex == s_presentQueueFamilyIndex) {
+		queueFamilyIndices[0] = s_graphicsQueueFamilyIndex;
+		queueFamilyIndexCount = 1;
+	}
+	else {
+		queueFamilyIndices[0] = s_graphicsQueueFamilyIndex;
+		queueFamilyIndices[1] = s_presentQueueFamilyIndex;
+	}
+	swapchainCreateInfo.queueFamilyIndexCount = queueFamilyIndexCount;
 	swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
 	swapchainCreateInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR; // FIFO 模式
 	swapchainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR; // 不进行预变换
-	swapchainCreateInfo.queueFamilyIndexCount = 1;
 	swapchainCreateInfo.surface = s_vulkanSurface;
 
 	vkCreateSwapchainKHR(s_vulkanDevice, &swapchainCreateInfo, nullptr, &s_vulkanSwapchain);
@@ -427,7 +450,7 @@ static void InitCommandPool()
 {
 	VkCommandPoolCreateInfo commandPoolCreateInfo = {};
 	commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	commandPoolCreateInfo.queueFamilyIndex = s_queueFamilyIndex;
+	commandPoolCreateInfo.queueFamilyIndex = s_graphicsQueueFamilyIndex;
 	commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // 允许重置命令缓冲区
 	vkCreateCommandPool(s_vulkanDevice, &commandPoolCreateInfo, nullptr, &s_vulkanCommandPool);
 }
