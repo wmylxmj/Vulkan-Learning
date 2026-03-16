@@ -579,3 +579,13 @@ void EndSwapChainRenderPass(VkCommandBuffer inCommandBuffer)
 
 	vkFreeCommandBuffers(s_vulkanDevice, s_vulkanCommandPool, 1, &inCommandBuffer);
 }
+
+VkDevice GetVulkanDevice()
+{
+	return s_vulkanDevice;
+}
+
+VkRenderPass GetVulkanSwapChainRenderPass()
+{
+	return s_vulkanSwapchainRenderPass;
+}

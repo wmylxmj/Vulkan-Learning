@@ -36,3 +36,6 @@ VkCommandBuffer CreateCommandBuffer(VkCommandBufferLevel inCommandBufferLevel = 
 void BeginCommandBuffer(VkCommandBuffer inCommandBuffer, VkCommandBufferUsageFlags inUsageFlags);
 void BeginSwapChainRenderPass(VkCommandBuffer inCommandBuffer);
 void EndSwapChainRenderPass(VkCommandBuffer inCommandBuffer);
+
+VkDevice GetVulkanDevice();
+VkRenderPass GetVulkanSwapChainRenderPass();
