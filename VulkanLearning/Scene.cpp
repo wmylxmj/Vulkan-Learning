@@ -95,6 +95,20 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	depthStencilStateCreateInfo.front = {};
 	depthStencilStateCreateInfo.back = {};
 
+	VkPipelineColorBlendAttachmentState colorBlendAttachmentState = {};
+	colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	colorBlendAttachmentState.blendEnable = VK_FALSE;
+
+	VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo = {};
+	colorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorBlendStateCreateInfo.attachmentCount = 1;
+	colorBlendStateCreateInfo.blendConstants[0] = 0.0f;
+	colorBlendStateCreateInfo.blendConstants[1] = 0.0f;
+	colorBlendStateCreateInfo.blendConstants[2] = 0.0f;
+	colorBlendStateCreateInfo.blendConstants[3] = 0.0f;
+	colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
+	colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
+
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {};
 	graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	graphicsPipelineCreateInfo.renderPass = GetVulkanSwapChainRenderPass();
@@ -107,6 +121,7 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	graphicsPipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
 	graphicsPipelineCreateInfo.pMultisampleState = &multisampleStateCreateInfo;
 	graphicsPipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
+	graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
 
 	vkCreateGraphicsPipelines(vulkanDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &s_trianglePipeline);
 }

@@ -33,4 +33,8 @@
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resource\test.vert" />
+    <None Include="Resource\test.frag" />
+  </ItemGroup>
 </Project>
