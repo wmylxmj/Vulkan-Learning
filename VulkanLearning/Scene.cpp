@@ -1,7 +1,39 @@
 #include "Scene.h"
 #include "VulkanUtils.h"
 
+#include <cstdio>
+#include <string>
+
 VkPipeline s_trianglePipeline = nullptr;
+
+VkShaderModule CompileShader(const char* inFilePath)
+{
+	FILE* pFile = nullptr;
+	errno_t err = fopen_s(&pFile, inFilePath, "rb");
+	if (err == 0)
+	{
+		fseek(pFile, 0, SEEK_END);
+		long fileSize = ftell(pFile);
+		rewind(pFile);
+		unsigned char* fileContent = new unsigned char[fileSize];
+		fread(fileContent, 1, fileSize, pFile);
+		fclose(pFile);
+
+		VkShaderModuleCreateInfo shaderCreateInfo = {};
+		shaderCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		shaderCreateInfo.codeSize = fileSize;
+		shaderCreateInfo.pCode = (uint32_t*)fileContent;
+
+		VkShaderModule shader;
+		if (vkCreateShaderModule(GetVulkanDevice(), &shaderCreateInfo, nullptr, &shader) != VK_SUCCESS)
+		{
+			std::string errorString = "Failed to create shader " + std::string(inFilePath);
+			OutputDebugStringA(errorString.c_str());
+		}
+		return shader;
+	}
+	return nullptr;
+}
 
 void InitScene(int inCanvasWidth, int inCanvasHeight)
 {
@@ -108,6 +140,9 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	colorBlendStateCreateInfo.blendConstants[3] = 0.0f;
 	colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
 	colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
+
+	VkShaderModule vertexShaderModule = CompileShader("Resource/test.vsb");
+	VkShaderModule fragmentShaderModule = CompileShader("Resource/test.fsb");
 
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {};
 	graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
