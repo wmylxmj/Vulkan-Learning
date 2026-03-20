@@ -4,6 +4,9 @@
 #include <cstdio>
 #include <string>
 
+VkBuffer s_vertexBuffer = nullptr;
+VkDeviceMemory s_vertexBufferMemory = nullptr;
+
 VkPipeline s_trianglePipeline = nullptr;
 VkPipelineLayout s_pipelineLayout = nullptr;
 
@@ -178,6 +181,41 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	graphicsPipelineCreateInfo.layout = s_pipelineLayout;
 
 	vkCreateGraphicsPipelines(vulkanDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &s_trianglePipeline);
+
+	float position[] = {
+		-0.5f, -0.5f, 0.0f, 1.0f,
+		0.5f, -0.5f, 0.0f, 1.0f,
+		0.0f, 0.5f, 0.0f, 1.0f
+	};
+
+	VkBufferCreateInfo vertexBufferCreateInfo = {};
+	vertexBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	vertexBufferCreateInfo.size = sizeof(position);
+	vertexBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	vertexBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	if (vkCreateBuffer(vulkanDevice, &vertexBufferCreateInfo, nullptr, &s_vertexBuffer) != VK_SUCCESS) {
+		OutputDebugStringA("Failed to create vertex buffer!\n");
+	}
+
+	VkMemoryRequirements memoryRequirements;
+	vkGetBufferMemoryRequirements(vulkanDevice, s_vertexBuffer, &memoryRequirements);
+	VkMemoryAllocateInfo memoryAllocateInfo = {};
+	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	memoryAllocateInfo.allocationSize = memoryRequirements.size;
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	vkGetPhysicalDeviceMemoryProperties(GetVulkanPhysicalDevice(), &memoryProperties);
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i)
+	{
+		if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
+			(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) // ÉÏ´«¶Ñ
+		{
+			memoryAllocateInfo.memoryTypeIndex = i;
+			break;
+		}
+	}
+
+	vkAllocateMemory(vulkanDevice, &memoryAllocateInfo, nullptr, &s_vertexBufferMemory);
+	vkBindBufferMemory(vulkanDevice, s_vertexBuffer, s_vertexBufferMemory, 0);
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)

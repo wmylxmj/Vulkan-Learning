@@ -585,6 +585,11 @@ VkDevice GetVulkanDevice()
 	return s_vulkanDevice;
 }
 
+VkPhysicalDevice GetVulkanPhysicalDevice()
+{
+	return s_vulkanPhysicalDevice;
+}
+
 VkRenderPass GetVulkanSwapChainRenderPass()
 {
 	return s_vulkanSwapchainRenderPass;

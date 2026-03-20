@@ -38,4 +38,5 @@ void BeginSwapChainRenderPass(VkCommandBuffer inCommandBuffer);
 void EndSwapChainRenderPass(VkCommandBuffer inCommandBuffer);
 
 VkDevice GetVulkanDevice();
+VkPhysicalDevice GetVulkanPhysicalDevice();
 VkRenderPass GetVulkanSwapChainRenderPass();
