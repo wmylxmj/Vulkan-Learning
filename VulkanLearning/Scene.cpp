@@ -112,7 +112,7 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	rasterizationStateCreateInfo.depthBiasSlopeFactor = 0.0f;
 	rasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
 	rasterizationStateCreateInfo.depthBiasClamp = 0.0f;
-	rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT; // ±³ÃæÌÞ³ý
+	rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
 
 	VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo = {};
 	multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -184,8 +184,19 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 
 	float position[] = {
 		-0.5f, -0.5f, 0.0f, 1.0f,
+		-0.5f, -0.5f, 0.0f, 1.0f,
+		-0.5f, -0.5f, 0.0f, 1.0f,
+		-0.5f, -0.5f, 0.0f, 1.0f,
+
+		0.0f, 0.5f, 0.0f, 1.0f,
+		0.0f, 0.5f, 0.0f, 1.0f,
+		0.0f, 0.5f, 0.0f, 1.0f,
+		0.0f, 0.5f, 0.0f, 1.0f,
+
 		0.5f, -0.5f, 0.0f, 1.0f,
-		0.0f, 0.5f, 0.0f, 1.0f
+		0.5f, -0.5f, 0.0f, 1.0f,
+		0.5f, -0.5f, 0.0f, 1.0f,
+		0.5f, -0.5f, 0.0f, 1.0f
 	};
 
 	VkBufferCreateInfo vertexBufferCreateInfo = {};
@@ -216,6 +227,11 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 
 	vkAllocateMemory(vulkanDevice, &memoryAllocateInfo, nullptr, &s_vertexBufferMemory);
 	vkBindBufferMemory(vulkanDevice, s_vertexBuffer, s_vertexBufferMemory, 0);
+
+	void* pMemory;
+	vkMapMemory(vulkanDevice, s_vertexBufferMemory, 0, sizeof(position), 0, &pMemory);
+	memcpy(pMemory, position, sizeof(position));
+	vkUnmapMemory(vulkanDevice, s_vertexBufferMemory);
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
@@ -225,6 +241,11 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 	BeginSwapChainRenderPass(vulkanCommandBuffer);
 
 	vkCmdBindPipeline(vulkanCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, s_trianglePipeline);
+
+	VkDeviceSize vertexOffsets[] = { 0 };
+	vkCmdBindVertexBuffers(vulkanCommandBuffer, 0, 1, &s_vertexBuffer, vertexOffsets);
+
+	vkCmdDraw(vulkanCommandBuffer, 3, 1, 0, 0);
 
 	EndSwapChainRenderPass(vulkanCommandBuffer);
 }
