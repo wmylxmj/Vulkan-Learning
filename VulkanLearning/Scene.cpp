@@ -7,6 +7,9 @@
 VkBuffer s_vertexBuffer = nullptr;
 VkDeviceMemory s_vertexBufferMemory = nullptr;
 
+VkBuffer s_colorVertexBuffer = nullptr;
+VkDeviceMemory s_colorVertexBufferMemory = nullptr;
+
 VkPipeline s_trianglePipeline = nullptr;
 VkPipelineLayout s_pipelineLayout = nullptr;
 
@@ -43,12 +46,16 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 {
 	VkDevice vulkanDevice = GetVulkanDevice();
 
-	VkVertexInputBindingDescription vertexInputBindingDescription = {};
-	vertexInputBindingDescription.binding = 0; // slot 0
-	vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; // per-vertex data
-	vertexInputBindingDescription.stride = sizeof(float) * 4 * 4;
+	VkVertexInputBindingDescription vertexInputBindingDescription[2] = {};
+	vertexInputBindingDescription[0].binding = 0; // slot 0
+	vertexInputBindingDescription[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX; // per-vertex data
+	vertexInputBindingDescription[0].stride = sizeof(float) * 4 * 4;
+	// color vbo
+	vertexInputBindingDescription[1].binding = 1; // slot 1
+	vertexInputBindingDescription[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX; // per-vertex data
+	vertexInputBindingDescription[1].stride = sizeof(float) * 4 * 1;
 
-	VkVertexInputAttributeDescription vertexInputAttributeDescriptions[4] = {};
+	VkVertexInputAttributeDescription vertexInputAttributeDescriptions[5] = {};
 	vertexInputAttributeDescriptions[0].binding = 0; // slot 0
 	vertexInputAttributeDescriptions[0].location = 0; // location 0 in shader
 	vertexInputAttributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT; // vec4
@@ -66,11 +73,16 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	vertexInputAttributeDescriptions[3].format = VK_FORMAT_R32G32B32A32_SFLOAT; // vec4
 	vertexInputAttributeDescriptions[3].offset = sizeof(float) * 4 * 3; // uv data starts after position, color and normal data (vec4 + vec4 + vec4)
 
+	vertexInputAttributeDescriptions[4].binding = 1; // slot 1
+	vertexInputAttributeDescriptions[4].location = 4; // location 4 in shader
+	vertexInputAttributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT; // vec4
+	vertexInputAttributeDescriptions[4].offset = 0; // position data starts at offset 0
+
 	VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {};
 	vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
-	vertexInputStateCreateInfo.pVertexBindingDescriptions = &vertexInputBindingDescription;
-	vertexInputStateCreateInfo.vertexAttributeDescriptionCount = 4;
+	vertexInputStateCreateInfo.vertexBindingDescriptionCount = 2;
+	vertexInputStateCreateInfo.pVertexBindingDescriptions = vertexInputBindingDescription;
+	vertexInputStateCreateInfo.vertexAttributeDescriptionCount = 5;
 	vertexInputStateCreateInfo.pVertexAttributeDescriptions = vertexInputAttributeDescriptions;
 
 	VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {};
@@ -199,39 +211,82 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		0.5f, -0.5f, 0.0f, 1.0f
 	};
 
-	VkBufferCreateInfo vertexBufferCreateInfo = {};
-	vertexBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	vertexBufferCreateInfo.size = sizeof(position);
-	vertexBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	vertexBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	if (vkCreateBuffer(vulkanDevice, &vertexBufferCreateInfo, nullptr, &s_vertexBuffer) != VK_SUCCESS) {
-		OutputDebugStringA("Failed to create vertex buffer!\n");
-	}
+	float colors[] = {
+		1.0f, 0.0f, 0.0f, 1.0f,
+		0.0f, 1.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f, 1.0f,
+	};
 
-	VkMemoryRequirements memoryRequirements;
-	vkGetBufferMemoryRequirements(vulkanDevice, s_vertexBuffer, &memoryRequirements);
-	VkMemoryAllocateInfo memoryAllocateInfo = {};
-	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	memoryAllocateInfo.allocationSize = memoryRequirements.size;
-	VkPhysicalDeviceMemoryProperties memoryProperties;
-	vkGetPhysicalDeviceMemoryProperties(GetVulkanPhysicalDevice(), &memoryProperties);
-	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i)
 	{
-		if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
-			(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) // 上传堆
-		{
-			memoryAllocateInfo.memoryTypeIndex = i;
-			break;
+		VkBufferCreateInfo vertexBufferCreateInfo = {};
+		vertexBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		vertexBufferCreateInfo.size = sizeof(position);
+		vertexBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		vertexBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		if (vkCreateBuffer(vulkanDevice, &vertexBufferCreateInfo, nullptr, &s_vertexBuffer) != VK_SUCCESS) {
+			OutputDebugStringA("Failed to create vertex buffer!\n");
 		}
+
+		VkMemoryRequirements memoryRequirements;
+		vkGetBufferMemoryRequirements(vulkanDevice, s_vertexBuffer, &memoryRequirements);
+		VkMemoryAllocateInfo memoryAllocateInfo = {};
+		memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		memoryAllocateInfo.allocationSize = memoryRequirements.size;
+		VkPhysicalDeviceMemoryProperties memoryProperties;
+		vkGetPhysicalDeviceMemoryProperties(GetVulkanPhysicalDevice(), &memoryProperties);
+		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i)
+		{
+			if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
+				(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) // 上传堆
+			{
+				memoryAllocateInfo.memoryTypeIndex = i;
+				break;
+			}
+		}
+
+		vkAllocateMemory(vulkanDevice, &memoryAllocateInfo, nullptr, &s_vertexBufferMemory);
+		vkBindBufferMemory(vulkanDevice, s_vertexBuffer, s_vertexBufferMemory, 0);
+
+		void* pMemory;
+		vkMapMemory(vulkanDevice, s_vertexBufferMemory, 0, sizeof(position), 0, &pMemory);
+		memcpy(pMemory, position, sizeof(position));
+		vkUnmapMemory(vulkanDevice, s_vertexBufferMemory);
 	}
+	{
+		VkBufferCreateInfo vertexBufferCreateInfo = {};
+		vertexBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		vertexBufferCreateInfo.size = sizeof(colors);
+		vertexBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		vertexBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		if (vkCreateBuffer(vulkanDevice, &vertexBufferCreateInfo, nullptr, &s_colorVertexBuffer) != VK_SUCCESS) {
+			OutputDebugStringA("Failed to create color vertex buffer!\n");
+		}
 
-	vkAllocateMemory(vulkanDevice, &memoryAllocateInfo, nullptr, &s_vertexBufferMemory);
-	vkBindBufferMemory(vulkanDevice, s_vertexBuffer, s_vertexBufferMemory, 0);
+		VkMemoryRequirements memoryRequirements;
+		vkGetBufferMemoryRequirements(vulkanDevice, s_colorVertexBuffer, &memoryRequirements);
+		VkMemoryAllocateInfo memoryAllocateInfo = {};
+		memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		memoryAllocateInfo.allocationSize = memoryRequirements.size;
+		VkPhysicalDeviceMemoryProperties memoryProperties;
+		vkGetPhysicalDeviceMemoryProperties(GetVulkanPhysicalDevice(), &memoryProperties);
+		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i)
+		{
+			if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
+				(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) // 上传堆
+			{
+				memoryAllocateInfo.memoryTypeIndex = i;
+				break;
+			}
+		}
 
-	void* pMemory;
-	vkMapMemory(vulkanDevice, s_vertexBufferMemory, 0, sizeof(position), 0, &pMemory);
-	memcpy(pMemory, position, sizeof(position));
-	vkUnmapMemory(vulkanDevice, s_vertexBufferMemory);
+		vkAllocateMemory(vulkanDevice, &memoryAllocateInfo, nullptr, &s_colorVertexBufferMemory);
+		vkBindBufferMemory(vulkanDevice, s_colorVertexBuffer, s_colorVertexBufferMemory, 0);
+
+		void* pMemory;
+		vkMapMemory(vulkanDevice, s_colorVertexBufferMemory, 0, sizeof(colors), 0, &pMemory);
+		memcpy(pMemory, colors, sizeof(colors));
+		vkUnmapMemory(vulkanDevice, s_colorVertexBufferMemory);
+	}
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
@@ -242,8 +297,12 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 
 	vkCmdBindPipeline(vulkanCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, s_trianglePipeline);
 
-	VkDeviceSize vertexOffsets[] = { 0 };
-	vkCmdBindVertexBuffers(vulkanCommandBuffer, 0, 1, &s_vertexBuffer, vertexOffsets);
+	VkBuffer vertexBuffers[] = {
+		s_vertexBuffer, s_colorVertexBuffer
+	};
+
+	VkDeviceSize vertexOffsets[] = { 0, 0 };
+	vkCmdBindVertexBuffers(vulkanCommandBuffer, 0, 2, vertexBuffers, vertexOffsets);
 
 	vkCmdDraw(vulkanCommandBuffer, 3, 1, 0, 0);
 
