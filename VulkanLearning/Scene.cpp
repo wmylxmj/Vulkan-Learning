@@ -10,8 +10,15 @@ VkDeviceMemory s_vertexBufferMemory = nullptr;
 VkBuffer s_colorVertexBuffer = nullptr;
 VkDeviceMemory s_colorVertexBufferMemory = nullptr;
 
+VkBuffer s_uniformBuffer = nullptr;
+VkDeviceMemory s_uniformBufferMemory = nullptr;
+
 VkPipeline s_trianglePipeline = nullptr;
 VkPipelineLayout s_pipelineLayout = nullptr;
+
+VkDescriptorSet s_descriptorSet = nullptr;
+VkDescriptorPool s_descriptorPool = nullptr;
+VkWriteDescriptorSet s_writeDescriptorSet = {};
 
 VkShaderModule CompileShader(const char* inFilePath)
 {
@@ -170,11 +177,50 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	shaderStages[1].module = fragmentShaderModule;
 	shaderStages[1].pName = "main";
 
+	VkDescriptorSetLayoutBinding descriptorSetLayoutBinding = {};
+	descriptorSetLayoutBinding.binding = 0;
+	descriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorSetLayoutBinding.descriptorCount = 1; // ubo -> descriptor <- texture
+	descriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	descriptorSetLayoutBinding.pImmutableSamplers = nullptr; // for texture
+
+	VkDescriptorSetLayout descriptorSetLayout;
+
+	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
+	descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	descriptorSetLayoutCreateInfo.bindingCount = 1;
+	descriptorSetLayoutCreateInfo.pBindings = &descriptorSetLayoutBinding;
+
+	vkCreateDescriptorSetLayout(vulkanDevice, &descriptorSetLayoutCreateInfo, nullptr, &descriptorSetLayout);
+
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
-	pipelineLayoutCreateInfo.setLayoutCount = 0;
+	pipelineLayoutCreateInfo.setLayoutCount = 1;
+	pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout;
 	vkCreatePipelineLayout(vulkanDevice, &pipelineLayoutCreateInfo, nullptr, &s_pipelineLayout);
+
+	VkDescriptorPoolSize descriptorPoolSize = {};
+	descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorPoolSize.descriptorCount = 1;
+
+	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
+	descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	descriptorPoolCreateInfo.maxSets = 1;
+	descriptorPoolCreateInfo.poolSizeCount = 1;
+	descriptorPoolCreateInfo.pPoolSizes = &descriptorPoolSize;
+
+	vkCreateDescriptorPool(vulkanDevice, &descriptorPoolCreateInfo, nullptr, &s_descriptorPool);
+
+	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
+	descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	descriptorSetAllocateInfo.descriptorPool = s_descriptorPool;
+	descriptorSetAllocateInfo.descriptorSetCount = 1;
+	descriptorSetAllocateInfo.pSetLayouts = &descriptorSetLayout;
+	if (vkAllocateDescriptorSets(vulkanDevice, &descriptorSetAllocateInfo, &s_descriptorSet) != VK_SUCCESS)
+	{
+		OutputDebugStringA("Failed to allocate descriptor sets!");
+	}
 
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {};
 	graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -215,6 +261,28 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		1.0f, 0.0f, 0.0f, 1.0f,
 		0.0f, 1.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, 1.0f, 1.0f,
+	};
+
+	float uniformBufferData[] = {
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
 	};
 
 	{
@@ -287,6 +355,41 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		memcpy(pMemory, colors, sizeof(colors));
 		vkUnmapMemory(vulkanDevice, s_colorVertexBufferMemory);
 	}
+
+	{
+		VkBufferCreateInfo uniformBufferCreateInfo = {};
+		uniformBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		uniformBufferCreateInfo.size = sizeof(float) * 16 * 1024;
+		uniformBufferCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		if (vkCreateBuffer(vulkanDevice, &uniformBufferCreateInfo, nullptr, &s_uniformBuffer) != VK_SUCCESS) {
+			OutputDebugStringA("Failed to create uniform buffer!\n");
+		}
+
+		VkMemoryRequirements memoryRequirements;
+		vkGetBufferMemoryRequirements(vulkanDevice, s_uniformBuffer, &memoryRequirements);
+		VkMemoryAllocateInfo memoryAllocateInfo = {};
+		memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		memoryAllocateInfo.allocationSize = memoryRequirements.size;
+		VkPhysicalDeviceMemoryProperties memoryProperties;
+		vkGetPhysicalDeviceMemoryProperties(GetVulkanPhysicalDevice(), &memoryProperties);
+		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i)
+		{
+			if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
+				(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) // ÉÏ´«¶Ñ
+			{
+				memoryAllocateInfo.memoryTypeIndex = i;
+				break;
+			}
+		}
+
+		vkAllocateMemory(vulkanDevice, &memoryAllocateInfo, nullptr, &s_uniformBufferMemory);
+		vkBindBufferMemory(vulkanDevice, s_uniformBuffer, s_uniformBufferMemory, 0);
+
+		void* pMemory;
+		vkMapMemory(vulkanDevice, s_uniformBufferMemory, 0, sizeof(uniformBufferData), 0, &pMemory);
+		memcpy(pMemory, uniformBufferData, sizeof(uniformBufferData));
+		vkUnmapMemory(vulkanDevice, s_uniformBufferMemory);
+	}
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
@@ -295,7 +398,34 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 	BeginCommandBuffer(vulkanCommandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	BeginSwapChainRenderPass(vulkanCommandBuffer);
 
+	VkDescriptorBufferInfo bufferInfo = {};
+	bufferInfo.buffer = s_uniformBuffer;
+	bufferInfo.offset = 0;
+	bufferInfo.range = sizeof(float) * 16 * 1024;
+
+	s_writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	s_writeDescriptorSet.descriptorCount = 1;
+	s_writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	s_writeDescriptorSet.pBufferInfo = &bufferInfo;
+	s_writeDescriptorSet.dstArrayElement = 0;
+	s_writeDescriptorSet.dstBinding = 0;
+	s_writeDescriptorSet.dstSet = s_descriptorSet;
+
+	vkUpdateDescriptorSets(GetVulkanDevice(), 1, &s_writeDescriptorSet, 0, nullptr);
+
 	vkCmdBindPipeline(vulkanCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, s_trianglePipeline);
+
+	VkDescriptorSet descriptorSets[1] = { s_descriptorSet };
+	vkCmdBindDescriptorSets(
+		vulkanCommandBuffer,
+		VK_PIPELINE_BIND_POINT_GRAPHICS,
+		s_pipelineLayout,
+		0,
+		1,
+		descriptorSets,
+		0,
+		nullptr
+	);
 
 	VkBuffer vertexBuffers[] = {
 		s_vertexBuffer, s_colorVertexBuffer

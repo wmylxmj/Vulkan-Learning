@@ -76,6 +76,7 @@ static bool InitVulkanInstance()
 #ifdef _DEBUG
 	vkInstanceCreateInfo.enabledLayerCount = s_preferredEnabledLayerCount;
 	vkInstanceCreateInfo.ppEnabledLayerNames = s_ppPreferredEnabledLayers;
+	OutputDebugStringA("Vulkan Validation Layers Enabled.\n");
 #endif
 
 	if (vkCreateInstance(&vkInstanceCreateInfo, nullptr, &s_vulkanInstance) != VK_SUCCESS)
