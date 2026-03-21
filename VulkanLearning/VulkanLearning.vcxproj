@@ -143,7 +143,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resource\test.frag" />
+    <None Include="Resource\test.fsb" />
     <None Include="Resource\test.vert" />
+    <None Include="Resource\test.vsb" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

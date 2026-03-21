@@ -36,5 +36,7 @@
   <ItemGroup>
     <None Include="Resource\test.vert" />
     <None Include="Resource\test.frag" />
+    <None Include="Resource\test.fsb" />
+    <None Include="Resource\test.vsb" />
   </ItemGroup>
 </Project>
