@@ -1,6 +1,8 @@
 #include "Scene.h"
 #include "VulkanUtils.h"
 
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 #include <cstdio>
 #include <string>
 
@@ -263,28 +265,6 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		0.0f, 0.0f, 1.0f, 1.0f,
 	};
 
-	float uniformBufferData[] = {
-		1.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 1.0f,
-
-		1.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 1.0f,
-
-		1.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 1.0f,
-
-		1.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 1.0f
-	};
-
 	{
 		VkBufferCreateInfo vertexBufferCreateInfo = {};
 		vertexBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -386,8 +366,16 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		vkBindBufferMemory(vulkanDevice, s_uniformBuffer, s_uniformBufferMemory, 0);
 
 		void* pMemory;
-		vkMapMemory(vulkanDevice, s_uniformBufferMemory, 0, sizeof(uniformBufferData), 0, &pMemory);
-		memcpy(pMemory, uniformBufferData, sizeof(uniformBufferData));
+		vkMapMemory(vulkanDevice, s_uniformBufferMemory, 0, sizeof(float) * 16 * 3, 0, &pMemory);
+		glm::mat4 modelViewProjection[3];
+		modelViewProjection[0] = glm::mat4(1.0f);
+		modelViewProjection[1] = glm::lookAt(
+			glm::vec3(1.0f, 1.0f, 1.0f),
+			glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::vec3(0.0f, 1.0f, 0.0f)
+		);
+		modelViewProjection[2] = glm::perspective(glm::radians(60.0f), 1280.0f / 720.f, 0.1f, 100.0f);
+		memcpy(pMemory, modelViewProjection, sizeof(glm::mat4) * 3);
 		vkUnmapMemory(vulkanDevice, s_uniformBufferMemory);
 	}
 }
