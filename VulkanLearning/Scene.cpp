@@ -20,7 +20,6 @@ VkPipelineLayout s_pipelineLayout = nullptr;
 
 VkDescriptorSet s_descriptorSet = nullptr;
 VkDescriptorPool s_descriptorPool = nullptr;
-VkWriteDescriptorSet s_writeDescriptorSet = {};
 
 VkShaderModule CompileShader(const char* inFilePath)
 {
@@ -179,19 +178,25 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	shaderStages[1].module = fragmentShaderModule;
 	shaderStages[1].pName = "main";
 
-	VkDescriptorSetLayoutBinding descriptorSetLayoutBinding = {};
-	descriptorSetLayoutBinding.binding = 0;
-	descriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorSetLayoutBinding.descriptorCount = 1; // ubo -> descriptor <- texture
-	descriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	descriptorSetLayoutBinding.pImmutableSamplers = nullptr; // for texture
+	VkDescriptorSetLayoutBinding descriptorSetLayoutBindings[2] = {};
+	descriptorSetLayoutBindings[0].binding = 0;
+	descriptorSetLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorSetLayoutBindings[0].descriptorCount = 1; // ubo -> descriptor <- texture
+	descriptorSetLayoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	descriptorSetLayoutBindings[0].pImmutableSamplers = nullptr; // for texture
+
+	descriptorSetLayoutBindings[1].binding = 1;
+	descriptorSetLayoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorSetLayoutBindings[1].descriptorCount = 1; // ubo -> descriptor <- texture
+	descriptorSetLayoutBindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	descriptorSetLayoutBindings[1].pImmutableSamplers = nullptr; // for texture
 
 	VkDescriptorSetLayout descriptorSetLayout;
 
 	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
 	descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	descriptorSetLayoutCreateInfo.bindingCount = 1;
-	descriptorSetLayoutCreateInfo.pBindings = &descriptorSetLayoutBinding;
+	descriptorSetLayoutCreateInfo.bindingCount = 2;
+	descriptorSetLayoutCreateInfo.pBindings = descriptorSetLayoutBindings;
 
 	vkCreateDescriptorSetLayout(vulkanDevice, &descriptorSetLayoutCreateInfo, nullptr, &descriptorSetLayout);
 
@@ -204,7 +209,7 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 
 	VkDescriptorPoolSize descriptorPoolSize = {};
 	descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorPoolSize.descriptorCount = 1;
+	descriptorPoolSize.descriptorCount = 2;
 
 	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
 	descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -391,15 +396,25 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 	bufferInfo.offset = 0;
 	bufferInfo.range = sizeof(float) * 16 * 1024;
 
-	s_writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	s_writeDescriptorSet.descriptorCount = 1;
-	s_writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	s_writeDescriptorSet.pBufferInfo = &bufferInfo;
-	s_writeDescriptorSet.dstArrayElement = 0;
-	s_writeDescriptorSet.dstBinding = 0;
-	s_writeDescriptorSet.dstSet = s_descriptorSet;
+	VkWriteDescriptorSet writeDescriptorSets[2] = {};
 
-	vkUpdateDescriptorSets(GetVulkanDevice(), 1, &s_writeDescriptorSet, 0, nullptr);
+	writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSets[0].descriptorCount = 1;
+	writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	writeDescriptorSets[0].pBufferInfo = &bufferInfo;
+	writeDescriptorSets[0].dstArrayElement = 0;
+	writeDescriptorSets[0].dstBinding = 0;
+	writeDescriptorSets[0].dstSet = s_descriptorSet;
+
+	writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSets[1].descriptorCount = 1;
+	writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	writeDescriptorSets[1].pBufferInfo = &bufferInfo;
+	writeDescriptorSets[1].dstArrayElement = 0;
+	writeDescriptorSets[1].dstBinding = 1;
+	writeDescriptorSets[1].dstSet = s_descriptorSet;
+
+	vkUpdateDescriptorSets(GetVulkanDevice(), 2, writeDescriptorSets, 0, nullptr);
 
 	vkCmdBindPipeline(vulkanCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, s_trianglePipeline);
 
