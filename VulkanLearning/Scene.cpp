@@ -1,8 +1,9 @@
 #include "Scene.h"
 #include "VulkanUtils.h"
+#include "StaticMesh.h"
 
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <cstdio>
 #include <string>
 
@@ -15,6 +16,8 @@ VkPipelineLayout s_pipelineLayout = nullptr;
 
 VkDescriptorSet s_descriptorSet = nullptr;
 VkDescriptorPool s_descriptorPool = nullptr;
+
+StaticMesh s_triangleMesh;
 
 VkShaderModule CompileShader(const char* inFilePath)
 {
@@ -47,41 +50,15 @@ VkShaderModule CompileShader(const char* inFilePath)
 
 void InitScene(int inCanvasWidth, int inCanvasHeight)
 {
+	StaticMesh::Initialize();
 	VkDevice vulkanDevice = GetVulkanDevice();
-
-	VkVertexInputBindingDescription vertexInputBindingDescription[1] = {};
-	vertexInputBindingDescription[0].binding = 0; // slot 0
-	vertexInputBindingDescription[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX; // per-vertex data
-	vertexInputBindingDescription[0].stride = sizeof(float) * 4 * 5;
-
-	VkVertexInputAttributeDescription vertexInputAttributeDescriptions[5] = {};
-	vertexInputAttributeDescriptions[0].binding = 0; // slot 0
-	vertexInputAttributeDescriptions[0].location = 0; // location 0 in shader
-	vertexInputAttributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT; // vec4
-	vertexInputAttributeDescriptions[0].offset = 0; // position data starts at offset 0
-	vertexInputAttributeDescriptions[1].binding = 0; // slot 0
-	vertexInputAttributeDescriptions[1].location = 1; // location 1 in shader
-	vertexInputAttributeDescriptions[1].format = VK_FORMAT_R32G32B32A32_SFLOAT; // vec4
-	vertexInputAttributeDescriptions[1].offset = sizeof(float) * 4; // color data starts after position data (vec4)
-	vertexInputAttributeDescriptions[2].binding = 0; // slot 0
-	vertexInputAttributeDescriptions[2].location = 2; // location 2 in shader
-	vertexInputAttributeDescriptions[2].format = VK_FORMAT_R32G32B32A32_SFLOAT; // vec4
-	vertexInputAttributeDescriptions[2].offset = sizeof(float) * 4 * 2; // normal data starts after position and color data (vec4 + vec4)
-	vertexInputAttributeDescriptions[3].binding = 0; // slot 0
-	vertexInputAttributeDescriptions[3].location = 3; // location 3 in shader
-	vertexInputAttributeDescriptions[3].format = VK_FORMAT_R32G32B32A32_SFLOAT; // vec4
-	vertexInputAttributeDescriptions[3].offset = sizeof(float) * 4 * 3; // uv data starts after position, color and normal data (vec4 + vec4 + vec4)
-	vertexInputAttributeDescriptions[4].binding = 0; // slot 0
-	vertexInputAttributeDescriptions[4].location = 4; // location 4 in shader
-	vertexInputAttributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT; // vec4
-	vertexInputAttributeDescriptions[4].offset = sizeof(float) * 4 * 4; // position data starts at offset 0
 
 	VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {};
 	vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
-	vertexInputStateCreateInfo.pVertexBindingDescriptions = vertexInputBindingDescription;
-	vertexInputStateCreateInfo.vertexAttributeDescriptionCount = 5;
-	vertexInputStateCreateInfo.pVertexAttributeDescriptions = vertexInputAttributeDescriptions;
+	vertexInputStateCreateInfo.vertexBindingDescriptionCount = StaticMesh::sm_vertexInputBindingDescriptions.size();
+	vertexInputStateCreateInfo.pVertexBindingDescriptions = StaticMesh::sm_vertexInputBindingDescriptions.data();
+	vertexInputStateCreateInfo.vertexAttributeDescriptionCount = StaticMesh::sm_vertexInputAttributeDescriptions.size();
+	vertexInputStateCreateInfo.pVertexAttributeDescriptions = StaticMesh::sm_vertexInputAttributeDescriptions.data();
 
 	VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {};
 	dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -237,32 +214,17 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 
 	vkCreateGraphicsPipelines(vulkanDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &s_trianglePipeline);
 
-	float position[] = {
-		-0.5f, -0.5f, 0.0f, 1.0f,
-		-0.5f, -0.5f, 0.0f, 1.0f,
-		-0.5f, -0.5f, 0.0f, 1.0f,
-		-0.5f, -0.5f, 0.0f, 1.0f,
-		1.0f, 0.0f, 0.0f, 1.0f,
-
-		0.0f, 0.5f, 0.0f, 1.0f,
-		0.0f, 0.5f, 0.0f, 1.0f,
-		0.0f, 0.5f, 0.0f, 1.0f,
-		0.0f, 0.5f, 0.0f, 1.0f,
-		0.0f, 1.0f, 0.0f, 1.0f,
-
-		0.5f, -0.5f, 0.0f, 1.0f,
-		0.5f, -0.5f, 0.0f, 1.0f,
-		0.5f, -0.5f, 0.0f, 1.0f,
-		0.5f, -0.5f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f, 1.0f,
-	};
+	s_triangleMesh.SetVertexCount(3);
+	s_triangleMesh.SetPosition(0, glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f));
+	s_triangleMesh.SetPosition(1, glm::vec4(0.0f, 0.5f, 0.0f, 1.0f));
+	s_triangleMesh.SetPosition(2, glm::vec4(0.5f, -0.5f, 0.0f, 1.0f));
 
 	s_pVertexBuffer = GenBufferObject(
-		sizeof(position),
+		sizeof(StaticMeshVertexData) * s_triangleMesh.m_vertexCount,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		sizeof(position),
-		position
+		sizeof(StaticMeshVertexData) * s_triangleMesh.m_vertexCount,
+		s_triangleMesh.m_vertexData
 	);
 
 	glm::mat4 modelViewProjection[3];

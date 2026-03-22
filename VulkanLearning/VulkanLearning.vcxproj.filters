@@ -24,12 +24,18 @@
     <ClCompile Include="Scene.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="StaticMesh.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VulkanUtils.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Scene.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="StaticMesh.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
