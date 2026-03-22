@@ -42,6 +42,57 @@ static VkSemaphore s_readyToRenderSemaphore = nullptr;
 static VkSemaphore s_readyToPresentSemaphore = nullptr;
 static uint32_t s_currentFrameBufferToRenderIndex = 0;
 
+Buffer::Buffer()
+{
+	buffer = nullptr;
+	memory = nullptr;
+}
+
+Buffer::~Buffer() {
+}
+
+Buffer* GenBufferObject(VkDeviceSize inBufferSize, VkBufferUsageFlags inUsageFlags, VkMemoryPropertyFlagBits inMemoryPropertyFlagBits, size_t inDataSize, const void* inData)
+{
+	Buffer* pBuffer = new Buffer();
+
+	VkBufferCreateInfo bufferCreateInfo = {};
+	bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferCreateInfo.size = inBufferSize;
+	bufferCreateInfo.usage = inUsageFlags;
+	if (vkCreateBuffer(s_vulkanDevice, &bufferCreateInfo, nullptr, &pBuffer->buffer) != VK_SUCCESS) {
+		OutputDebugStringA("Failed to create buffer!\n");
+	}
+
+	VkMemoryRequirements memoryRequirements;
+	vkGetBufferMemoryRequirements(s_vulkanDevice, pBuffer->buffer, &memoryRequirements);
+	VkMemoryAllocateInfo memoryAllocateInfo = {};
+	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	memoryAllocateInfo.allocationSize = memoryRequirements.size;
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	vkGetPhysicalDeviceMemoryProperties(GetVulkanPhysicalDevice(), &memoryProperties);
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i)
+	{
+		if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
+			(memoryProperties.memoryTypes[i].propertyFlags & inMemoryPropertyFlagBits))
+		{
+			memoryAllocateInfo.memoryTypeIndex = i;
+			break;
+		}
+	}
+
+	vkAllocateMemory(s_vulkanDevice, &memoryAllocateInfo, nullptr, &pBuffer->memory);
+	vkBindBufferMemory(s_vulkanDevice, pBuffer->buffer, pBuffer->memory, 0);
+
+	if (inMemoryPropertyFlagBits & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+		void* pMemory;
+		vkMapMemory(s_vulkanDevice, pBuffer->memory, 0, inDataSize, 0, &pMemory);
+		memcpy(pMemory, inData, inDataSize);
+		vkUnmapMemory(s_vulkanDevice, pBuffer->memory);
+	}
+
+	return pBuffer;
+}
+
 static bool InitVulkanInstance()
 {
 	VkApplicationInfo vkApplicationInfo = {};

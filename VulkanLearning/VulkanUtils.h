@@ -29,6 +29,13 @@ struct Texture
 	VkFormat format;
 };
 
+struct Buffer {
+	Buffer();
+	~Buffer();
+	VkBuffer buffer;
+	VkDeviceMemory memory;
+};
+
 bool InitVulkan(void* inUserData, int inWidth, int inHeight);
 
 VkCommandBuffer CreateCommandBuffer(VkCommandBufferLevel inCommandBufferLevel = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -40,3 +47,11 @@ void EndSwapChainRenderPass(VkCommandBuffer inCommandBuffer);
 VkDevice GetVulkanDevice();
 VkPhysicalDevice GetVulkanPhysicalDevice();
 VkRenderPass GetVulkanSwapChainRenderPass();
+
+Buffer* GenBufferObject(
+	VkDeviceSize inBufferSize,
+	VkBufferUsageFlags inUsageFlags,
+	VkMemoryPropertyFlagBits inMemoryPropertyFlagBits,
+	size_t inDataSize = 0,
+	const void* inData = nullptr
+);
