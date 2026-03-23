@@ -10,6 +10,7 @@
 Buffer* s_pVertexBuffer = nullptr;
 
 Buffer* s_pUniformBuffer = nullptr;
+Buffer* s_pIndexBuffer = nullptr;
 
 VkPipeline s_trianglePipeline = nullptr;
 VkPipelineLayout s_pipelineLayout = nullptr;
@@ -243,6 +244,15 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		sizeof(glm::mat4) * 3,
 		modelViewProjection
 	);
+
+	uint32_t indices[] = { 0, 1, 2 };
+	s_pIndexBuffer = GenBufferObject(
+		sizeof(uint32_t) * 3,
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		sizeof(uint32_t) * 3,
+		indices
+	);
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
@@ -289,7 +299,8 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 	VkDeviceSize vertexOffsets[] = { 0 };
 	vkCmdBindVertexBuffers(vulkanCommandBuffer, 0, 1, vertexBuffers, vertexOffsets);
 
-	vkCmdDraw(vulkanCommandBuffer, 3, 1, 0, 0);
+	vkCmdBindIndexBuffer(vulkanCommandBuffer, s_pIndexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdDrawIndexed(vulkanCommandBuffer, 3, 1, 0, 0, 0);
 
 	EndSwapChainRenderPass(vulkanCommandBuffer);
 }
