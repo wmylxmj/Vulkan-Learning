@@ -7,10 +7,7 @@
 #include <cstdio>
 #include <string>
 
-Buffer* s_pVertexBuffer = nullptr;
-
 Buffer* s_pUniformBuffer = nullptr;
-Buffer* s_pIndexBuffer = nullptr;
 
 VkPipeline s_trianglePipeline = nullptr;
 VkPipelineLayout s_pipelineLayout = nullptr;
@@ -220,7 +217,7 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	s_triangleMesh.SetPosition(1, glm::vec4(0.0f, 0.5f, 0.0f, 1.0f));
 	s_triangleMesh.SetPosition(2, glm::vec4(0.5f, -0.5f, 0.0f, 1.0f));
 
-	s_pVertexBuffer = GenBufferObject(
+	s_triangleMesh.m_pVertexBuffer = GenBufferObject(
 		sizeof(StaticMeshVertexData) * s_triangleMesh.m_vertexCount,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
@@ -245,14 +242,22 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		modelViewProjection
 	);
 
-	uint32_t indices[] = { 0, 1, 2 };
-	s_pIndexBuffer = GenBufferObject(
-		sizeof(uint32_t) * 3,
+	SubMesh* pSubMesh = new SubMesh();
+	pSubMesh->indexCount = 3;
+	pSubMesh->pIndices = new uint32_t[3];
+	pSubMesh->pIndices[0] = 0;
+	pSubMesh->pIndices[1] = 1;
+	pSubMesh->pIndices[2] = 2;
+
+	pSubMesh->pIndexBuffer = GenBufferObject(
+		sizeof(uint32_t) * pSubMesh->indexCount,
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		sizeof(uint32_t) * 3,
-		indices
+		sizeof(uint32_t) * pSubMesh->indexCount,
+		pSubMesh->pIndices
 	);
+
+	s_triangleMesh.m_subMeshes.insert(std::pair<std::string, SubMesh*>("triangle", pSubMesh));
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
@@ -292,15 +297,7 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 		nullptr
 	);
 
-	VkBuffer vertexBuffers[] = {
-		s_pVertexBuffer->buffer
-	};
-
-	VkDeviceSize vertexOffsets[] = { 0 };
-	vkCmdBindVertexBuffers(vulkanCommandBuffer, 0, 1, vertexBuffers, vertexOffsets);
-
-	vkCmdBindIndexBuffer(vulkanCommandBuffer, s_pIndexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdDrawIndexed(vulkanCommandBuffer, 3, 1, 0, 0, 0);
+	s_triangleMesh.Draw(vulkanCommandBuffer);
 
 	EndSwapChainRenderPass(vulkanCommandBuffer);
 }

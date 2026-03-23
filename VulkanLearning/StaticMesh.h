@@ -2,6 +2,8 @@
 
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
+#include <string>
+#include "VulkanUtils.h"
 
 struct StaticMeshVertexData
 {
@@ -9,6 +11,13 @@ struct StaticMeshVertexData
 	glm::vec4 texcoord;
 	glm::vec4 normal;
 	glm::vec4 tangent;
+};
+
+struct SubMesh
+{
+	uint32_t* pIndices;
+	uint32_t indexCount;
+	Buffer* pIndexBuffer;
 };
 
 class StaticMesh
@@ -24,6 +33,11 @@ public:
 	void SetNormal(uint32_t index, glm::vec4 normal);
 	void SetTangent(uint32_t index, glm::vec4 tangent);
 
+	void Draw(VkCommandBuffer commandBuffer);
+
 	StaticMeshVertexData* m_vertexData;
 	uint32_t m_vertexCount;
+	std::unordered_map<std::string, SubMesh*> m_subMeshes;
+
+	Buffer* m_pVertexBuffer;
 };

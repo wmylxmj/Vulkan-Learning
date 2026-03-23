@@ -54,3 +54,24 @@ void StaticMesh::SetTangent(uint32_t index, glm::vec4 tangent)
 {
 	m_vertexData[index].tangent = tangent;
 }
+
+void StaticMesh::Draw(VkCommandBuffer commandBuffer)
+{
+	VkBuffer vertexBuffers[] = {
+		m_pVertexBuffer->buffer
+	};
+
+	VkDeviceSize vertexOffsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, vertexOffsets);
+
+	if (!m_subMeshes.empty()) {
+		for (auto& subMesh : m_subMeshes) {
+			vkCmdBindIndexBuffer(commandBuffer, subMesh.second->pIndexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdDrawIndexed(commandBuffer, subMesh.second->indexCount, 1, 0, 0, 0);
+		}
+	}
+	else
+	{
+		vkCmdDraw(commandBuffer, m_vertexCount, 1, 0, 0);
+	}
+}
