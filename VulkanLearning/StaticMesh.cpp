@@ -75,3 +75,7 @@ void StaticMesh::Draw(VkCommandBuffer commandBuffer)
 		vkCmdDraw(commandBuffer, m_vertexCount, 1, 0, 0);
 	}
 }
+
+void StaticMesh::InitFromFile(const char* inFilePath)
+{
+}

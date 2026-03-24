@@ -3,6 +3,9 @@
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
 #include <string>
+
+#include <assimp/Importer.hpp>
+
 #include "VulkanUtils.h"
 
 struct StaticMeshVertexData
@@ -34,6 +37,8 @@ public:
 	void SetTangent(uint32_t index, glm::vec4 tangent);
 
 	void Draw(VkCommandBuffer commandBuffer);
+
+	void InitFromFile(const char* inFilePath);
 
 	StaticMeshVertexData* m_vertexData;
 	uint32_t m_vertexCount;
