@@ -4,8 +4,6 @@
 #include <glm/glm.hpp>
 #include <string>
 
-#include <assimp/Importer.hpp>
-
 #include "VulkanUtils.h"
 
 struct StaticMeshVertexData

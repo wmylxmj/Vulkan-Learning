@@ -1,5 +1,9 @@
 #include "StaticMesh.h"
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 std::vector<VkVertexInputBindingDescription> StaticMesh::sm_vertexInputBindingDescriptions;
 std::vector<VkVertexInputAttributeDescription> StaticMesh::sm_vertexInputAttributeDescriptions;
 
@@ -78,4 +82,77 @@ void StaticMesh::Draw(VkCommandBuffer commandBuffer)
 
 void StaticMesh::InitFromFile(const char* inFilePath)
 {
+	Assimp::Importer importer;
+	constexpr unsigned int flags = aiProcess_Triangulate |
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_GenNormals |
+		aiProcess_CalcTangentSpace;
+	const aiScene* pScene = importer.ReadFile(inFilePath, flags);
+	if (pScene == nullptr) {
+		OutputDebugStringA(importer.GetErrorString());
+		OutputDebugStringA("\n");
+		return;
+	}
+	std::vector<StaticMeshVertexData> vertices;
+	for (unsigned int i = 0; i < pScene->mNumMeshes; ++i) {
+		const aiMesh* pMesh = pScene->mMeshes[i];
+
+		uint32_t vertexBase = vertices.size();
+		for (unsigned int i = 0; i < pMesh->mNumVertices; ++i) {
+			StaticMeshVertexData vertex;
+			vertex.position.x = pMesh->mVertices[i].x;
+			vertex.position.y = pMesh->mVertices[i].y;
+			vertex.position.z = pMesh->mVertices[i].z;
+			vertex.position.w = 1.0f;
+			if (pMesh->mTextureCoords[0]) {
+				vertex.texcoord.x = pMesh->mTextureCoords[0][i].x;
+				vertex.texcoord.y = pMesh->mTextureCoords[0][i].y;
+				vertex.texcoord.z = 0.0f;
+				vertex.texcoord.w = 0.0f;
+			}
+			vertex.normal.x = pMesh->mNormals[i].x;
+			vertex.normal.y = pMesh->mNormals[i].y;
+			vertex.normal.z = pMesh->mNormals[i].z;
+			vertex.normal.w = 0.0f;
+
+			if (pMesh->mTangents) {
+				vertex.tangent.x = pMesh->mTangents[i].x;
+				vertex.tangent.y = pMesh->mTangents[i].y;
+				vertex.tangent.z = pMesh->mTangents[i].z;
+				vertex.tangent.w = 0.0f;
+			}
+			vertices.push_back(vertex);
+		}
+
+		SubMesh* subMesh = new SubMesh();
+		std::vector<uint32_t> indices;
+		for (unsigned int i = 0; i < pMesh->mNumFaces; ++i) {
+			if (const aiFace face = pMesh->mFaces[i]; face.mNumIndices == 3)
+			{
+				for (unsigned int j = 0; j < face.mNumIndices; j++) {
+					indices.push_back(face.mIndices[j] + vertexBase);
+				}
+			}
+		}
+		subMesh->indexCount = indices.size();
+		subMesh->pIndices = new uint32_t[subMesh->indexCount];
+		memcpy(subMesh->pIndices, indices.data(), sizeof(uint32_t) * subMesh->indexCount);
+		subMesh->pIndexBuffer = GenBufferObject(
+			subMesh->indexCount * sizeof(uint32_t),
+			VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+			subMesh->indexCount * sizeof(uint32_t),
+			subMesh->pIndices
+		);
+		m_subMeshes[pMesh->mName.C_Str()] = subMesh;
+	}
+	SetVertexCount(vertices.size());
+	memcpy(m_vertexData, vertices.data(), sizeof(StaticMeshVertexData) * vertices.size());
+	m_pVertexBuffer = GenBufferObject(
+		m_vertexCount * sizeof(StaticMeshVertexData),
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		m_vertexCount * sizeof(StaticMeshVertexData),
+		m_vertexData
+	);
 }

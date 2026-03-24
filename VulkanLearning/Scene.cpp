@@ -212,23 +212,10 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 
 	vkCreateGraphicsPipelines(vulkanDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &s_trianglePipeline);
 
-	s_triangleMesh.SetVertexCount(3);
-	s_triangleMesh.SetPosition(0, glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f));
-	s_triangleMesh.SetPosition(1, glm::vec4(0.0f, 0.5f, 0.0f, 1.0f));
-	s_triangleMesh.SetPosition(2, glm::vec4(0.5f, -0.5f, 0.0f, 1.0f));
-
-	s_triangleMesh.m_pVertexBuffer = GenBufferObject(
-		sizeof(StaticMeshVertexData) * s_triangleMesh.m_vertexCount,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		sizeof(StaticMeshVertexData) * s_triangleMesh.m_vertexCount,
-		s_triangleMesh.m_vertexData
-	);
-
 	glm::mat4 modelViewProjection[3];
 	modelViewProjection[0] = glm::mat4(1.0f);
 	modelViewProjection[1] = glm::lookAt(
-		glm::vec3(1.0f, 1.0f, 1.0f),
+		glm::vec3(2.0f, 2.0f, 2.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f)
 	);
@@ -242,22 +229,7 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		modelViewProjection
 	);
 
-	SubMesh* pSubMesh = new SubMesh();
-	pSubMesh->indexCount = 3;
-	pSubMesh->pIndices = new uint32_t[3];
-	pSubMesh->pIndices[0] = 0;
-	pSubMesh->pIndices[1] = 1;
-	pSubMesh->pIndices[2] = 2;
-
-	pSubMesh->pIndexBuffer = GenBufferObject(
-		sizeof(uint32_t) * pSubMesh->indexCount,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		sizeof(uint32_t) * pSubMesh->indexCount,
-		pSubMesh->pIndices
-	);
-
-	s_triangleMesh.m_subMeshes.insert(std::pair<std::string, SubMesh*>("triangle", pSubMesh));
+	s_triangleMesh.InitFromFile("Resource/UnitSphere.obj");
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
