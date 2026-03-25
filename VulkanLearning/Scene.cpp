@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "VulkanUtils.h"
 #include "StaticMesh.h"
+#include "SceneNode.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -15,7 +16,7 @@ VkPipelineLayout s_pipelineLayout = nullptr;
 VkDescriptorSet s_descriptorSet = nullptr;
 VkDescriptorPool s_descriptorPool = nullptr;
 
-StaticMesh s_triangleMesh;
+SceneNode* s_pSphereNode = nullptr;
 
 VkShaderModule CompileShader(const char* inFilePath)
 {
@@ -212,6 +213,10 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 
 	vkCreateGraphicsPipelines(vulkanDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &s_trianglePipeline);
 
+	s_pSphereNode = new SceneNode();
+	s_pSphereNode->m_staticMesh = new StaticMesh();
+	s_pSphereNode->m_staticMesh->InitFromFile("Resource/UnitSphere.obj");
+
 	glm::mat4 modelViewProjection[3];
 	modelViewProjection[0] = glm::mat4(1.0f);
 	modelViewProjection[1] = glm::lookAt(
@@ -228,8 +233,6 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		sizeof(glm::mat4) * 3,
 		modelViewProjection
 	);
-
-	s_triangleMesh.InitFromFile("Resource/UnitSphere.obj");
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
@@ -269,7 +272,7 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 		nullptr
 	);
 
-	s_triangleMesh.Draw(vulkanCommandBuffer);
+	s_pSphereNode->Draw(vulkanCommandBuffer);
 
 	EndSwapChainRenderPass(vulkanCommandBuffer);
 }
