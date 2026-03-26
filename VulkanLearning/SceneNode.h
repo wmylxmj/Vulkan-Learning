@@ -12,9 +12,10 @@ public:
 	void SetPosition(glm::vec4 position);
 	void SetRotation(glm::quat rotation);
 	void SetScale(glm::vec4 scale);
-	void Draw(VkCommandBuffer commandBuffer);
+	void Draw(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet);
 
 	StaticMesh* m_staticMesh;
+	Buffer* m_uniformBuffer;
 
 	glm::vec4 m_position;
 	glm::quat m_rotation;

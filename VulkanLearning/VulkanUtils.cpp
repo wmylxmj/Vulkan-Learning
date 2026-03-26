@@ -84,10 +84,12 @@ Buffer* GenBufferObject(VkDeviceSize inBufferSize, VkBufferUsageFlags inUsageFla
 	vkBindBufferMemory(s_vulkanDevice, pBuffer->buffer, pBuffer->memory, 0);
 
 	if (inMemoryPropertyFlagBits & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-		void* pMemory;
-		vkMapMemory(s_vulkanDevice, pBuffer->memory, 0, inDataSize, 0, &pMemory);
-		memcpy(pMemory, inData, inDataSize);
-		vkUnmapMemory(s_vulkanDevice, pBuffer->memory);
+		if (inDataSize > 0 && inData != nullptr) {
+			void* pMemory;
+			vkMapMemory(s_vulkanDevice, pBuffer->memory, 0, inDataSize, 0, &pMemory);
+			memcpy(pMemory, inData, inDataSize);
+			vkUnmapMemory(s_vulkanDevice, pBuffer->memory);
+		}
 	}
 
 	return pBuffer;

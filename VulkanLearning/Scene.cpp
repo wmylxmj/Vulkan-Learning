@@ -8,8 +8,6 @@
 #include <cstdio>
 #include <string>
 
-Buffer* s_pUniformBuffer = nullptr;
-
 VkPipeline s_trianglePipeline = nullptr;
 VkPipelineLayout s_pipelineLayout = nullptr;
 
@@ -17,6 +15,9 @@ VkDescriptorSet s_descriptorSet = nullptr;
 VkDescriptorPool s_descriptorPool = nullptr;
 
 SceneNode* s_pSphereNode = nullptr;
+
+glm::mat4 s_viewMatrix;
+glm::mat4 s_projectionMatrix;
 
 VkShaderModule CompileShader(const char* inFilePath)
 {
@@ -49,6 +50,13 @@ VkShaderModule CompileShader(const char* inFilePath)
 
 void InitScene(int inCanvasWidth, int inCanvasHeight)
 {
+	s_viewMatrix = glm::lookAt(
+		glm::vec3(2.0f, 2.0f, 2.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f)
+	);
+	s_projectionMatrix = glm::perspective(glm::radians(60.0f), 1280.0f / 720.f, 0.1f, 100.0f);
+
 	StaticMesh::Initialize();
 	VkDevice vulkanDevice = GetVulkanDevice();
 
@@ -166,9 +174,15 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 
 	vkCreateDescriptorSetLayout(vulkanDevice, &descriptorSetLayoutCreateInfo, nullptr, &descriptorSetLayout);
 
+	VkPushConstantRange pushConstantRange = {};
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(glm::mat4) * 2;
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+	pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
 	pipelineLayoutCreateInfo.setLayoutCount = 1;
 	pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout;
 	vkCreatePipelineLayout(vulkanDevice, &pipelineLayoutCreateInfo, nullptr, &s_pipelineLayout);
@@ -216,23 +230,6 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	s_pSphereNode = new SceneNode();
 	s_pSphereNode->m_staticMesh = new StaticMesh();
 	s_pSphereNode->m_staticMesh->InitFromFile("Resource/UnitSphere.obj");
-
-	glm::mat4 modelViewProjection[3];
-	modelViewProjection[0] = glm::mat4(1.0f);
-	modelViewProjection[1] = glm::lookAt(
-		glm::vec3(2.0f, 2.0f, 2.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f)
-	);
-	modelViewProjection[2] = glm::perspective(glm::radians(60.0f), 1280.0f / 720.f, 0.1f, 100.0f);
-
-	s_pUniformBuffer = GenBufferObject(
-		sizeof(float) * 16 * 1024,
-		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		sizeof(glm::mat4) * 3,
-		modelViewProjection
-	);
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
@@ -240,23 +237,6 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 	VkCommandBuffer vulkanCommandBuffer = CreateCommandBuffer();
 	BeginCommandBuffer(vulkanCommandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	BeginSwapChainRenderPass(vulkanCommandBuffer);
-
-	VkDescriptorBufferInfo bufferInfo = {};
-	bufferInfo.buffer = s_pUniformBuffer->buffer;
-	bufferInfo.offset = 0;
-	bufferInfo.range = sizeof(float) * 16 * 1024;
-
-	VkWriteDescriptorSet writeDescriptorSets[1] = {};
-
-	writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSets[0].descriptorCount = 1;
-	writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	writeDescriptorSets[0].pBufferInfo = &bufferInfo;
-	writeDescriptorSets[0].dstArrayElement = 0;
-	writeDescriptorSets[0].dstBinding = 0;
-	writeDescriptorSets[0].dstSet = s_descriptorSet;
-
-	vkUpdateDescriptorSets(GetVulkanDevice(), 1, writeDescriptorSets, 0, nullptr);
 
 	vkCmdBindPipeline(vulkanCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, s_trianglePipeline);
 
@@ -272,7 +252,12 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 		nullptr
 	);
 
-	s_pSphereNode->Draw(vulkanCommandBuffer);
+	vkCmdPushConstants(vulkanCommandBuffer, s_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+		0, sizeof(glm::mat4), &s_viewMatrix);
+	vkCmdPushConstants(vulkanCommandBuffer, s_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+		sizeof(glm::mat4), sizeof(glm::mat4), &s_projectionMatrix);
+
+	s_pSphereNode->Draw(vulkanCommandBuffer, s_descriptorSet);
 
 	EndSwapChainRenderPass(vulkanCommandBuffer);
 }
