@@ -11,7 +11,6 @@
 VkPipeline s_trianglePipeline = nullptr;
 VkPipelineLayout s_pipelineLayout = nullptr;
 
-VkDescriptorSet s_descriptorSet = nullptr;
 VkDescriptorPool s_descriptorPool = nullptr;
 
 SceneNode* s_pSphereNode = nullptr;
@@ -199,12 +198,20 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 
 	vkCreateDescriptorPool(vulkanDevice, &descriptorPoolCreateInfo, nullptr, &s_descriptorPool);
 
+	s_pSphereNode = new SceneNode();
+	s_pSphereNode->m_staticMesh = new StaticMesh();
+	s_pSphereNode->m_staticMesh->InitFromFile("Resource/UnitSphere.obj");
+
 	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
 	descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	descriptorSetAllocateInfo.descriptorPool = s_descriptorPool;
 	descriptorSetAllocateInfo.descriptorSetCount = 1;
 	descriptorSetAllocateInfo.pSetLayouts = &descriptorSetLayout;
-	if (vkAllocateDescriptorSets(vulkanDevice, &descriptorSetAllocateInfo, &s_descriptorSet) != VK_SUCCESS)
+	if (vkAllocateDescriptorSets(
+		vulkanDevice,
+		&descriptorSetAllocateInfo,
+		&s_pSphereNode->m_staticMesh->m_material.m_descriptorSet
+	) != VK_SUCCESS)
 	{
 		OutputDebugStringA("Failed to allocate descriptor sets!");
 	}
@@ -226,10 +233,6 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	graphicsPipelineCreateInfo.layout = s_pipelineLayout;
 
 	vkCreateGraphicsPipelines(vulkanDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &s_trianglePipeline);
-
-	s_pSphereNode = new SceneNode();
-	s_pSphereNode->m_staticMesh = new StaticMesh();
-	s_pSphereNode->m_staticMesh->InitFromFile("Resource/UnitSphere.obj");
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
@@ -240,24 +243,12 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 
 	vkCmdBindPipeline(vulkanCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, s_trianglePipeline);
 
-	VkDescriptorSet descriptorSets[1] = { s_descriptorSet };
-	vkCmdBindDescriptorSets(
-		vulkanCommandBuffer,
-		VK_PIPELINE_BIND_POINT_GRAPHICS,
-		s_pipelineLayout,
-		0,
-		1,
-		descriptorSets,
-		0,
-		nullptr
-	);
-
 	vkCmdPushConstants(vulkanCommandBuffer, s_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
 		0, sizeof(glm::mat4), &s_viewMatrix);
 	vkCmdPushConstants(vulkanCommandBuffer, s_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
 		sizeof(glm::mat4), sizeof(glm::mat4), &s_projectionMatrix);
 
-	s_pSphereNode->Draw(vulkanCommandBuffer, s_descriptorSet);
+	s_pSphereNode->Draw(vulkanCommandBuffer, s_pipelineLayout);
 
 	EndSwapChainRenderPass(vulkanCommandBuffer);
 }

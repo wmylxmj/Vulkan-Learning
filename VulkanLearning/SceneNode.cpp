@@ -20,7 +20,7 @@ void SceneNode::SetScale(glm::vec4 scale)
 {
 }
 
-void SceneNode::Draw(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet)
+void SceneNode::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
 {
 	if (m_needUpdate)
 	{
@@ -46,6 +46,11 @@ void SceneNode::Draw(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSe
 			vkUnmapMemory(device, m_uniformBuffer->memory);
 		}
 
+		m_needUpdate = false;
+	}
+
+	if (m_staticMesh != nullptr)
+	{
 		VkDescriptorBufferInfo bufferInfo = {};
 		bufferInfo.buffer = m_uniformBuffer->buffer;
 		bufferInfo.offset = 0;
@@ -59,13 +64,21 @@ void SceneNode::Draw(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSe
 		writeDescriptorSets[0].pBufferInfo = &bufferInfo;
 		writeDescriptorSets[0].dstArrayElement = 0;
 		writeDescriptorSets[0].dstBinding = 0;
-		writeDescriptorSets[0].dstSet = descriptorSet;
+		writeDescriptorSets[0].dstSet = m_staticMesh->m_material.m_descriptorSet;
 
 		vkUpdateDescriptorSets(GetVulkanDevice(), 1, writeDescriptorSets, 0, nullptr);
-		m_needUpdate = false;
-	}
-	if (m_staticMesh != nullptr)
-	{
+
+		vkCmdBindDescriptorSets(
+			commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			pipelineLayout,
+			0,
+			1,
+			&m_staticMesh->m_material.m_descriptorSet,
+			0,
+			nullptr
+		);
+
 		m_staticMesh->Draw(commandBuffer);
 	}
 }

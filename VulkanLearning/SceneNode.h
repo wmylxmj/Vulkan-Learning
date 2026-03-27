@@ -12,7 +12,7 @@ public:
 	void SetPosition(glm::vec4 position);
 	void SetRotation(glm::quat rotation);
 	void SetScale(glm::vec4 scale);
-	void Draw(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet);
+	void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
 
 	StaticMesh* m_staticMesh;
 	Buffer* m_uniformBuffer;

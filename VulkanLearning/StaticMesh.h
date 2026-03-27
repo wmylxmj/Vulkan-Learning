@@ -5,6 +5,7 @@
 #include <string>
 
 #include "VulkanUtils.h"
+#include "Material.h"
 
 struct StaticMeshVertexData
 {
@@ -38,6 +39,7 @@ public:
 
 	void InitFromFile(const char* inFilePath);
 
+	Material m_material;
 	StaticMeshVertexData* m_vertexData;
 	uint32_t m_vertexCount;
 	std::unordered_map<std::string, SubMesh*> m_subMeshes;
