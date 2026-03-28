@@ -2,6 +2,7 @@
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.h>
+#include <glm/glm.hpp>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -36,6 +37,11 @@ struct Buffer {
 	VkDeviceMemory memory;
 };
 
+struct ShaderParameterDescription {
+	VkDescriptorSetLayout descriptorSetLayout;
+	VkPipelineLayout pipelineLayout;
+};
+
 bool InitVulkan(void* inUserData, int inWidth, int inHeight);
 
 VkCommandBuffer CreateCommandBuffer(VkCommandBufferLevel inCommandBufferLevel = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -55,3 +61,5 @@ Buffer* GenBufferObject(
 	size_t inDataSize = 0,
 	const void* inData = nullptr
 );
+
+ShaderParameterDescription* GetOpaquePassShaderParameterDescription();

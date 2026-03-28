@@ -9,7 +9,6 @@
 #include <string>
 
 VkPipeline s_trianglePipeline = nullptr;
-VkPipelineLayout s_pipelineLayout = nullptr;
 
 VkDescriptorPool s_descriptorPool = nullptr;
 
@@ -151,41 +150,6 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	shaderStages[1].module = fragmentShaderModule;
 	shaderStages[1].pName = "main";
 
-	VkDescriptorSetLayoutBinding descriptorSetLayoutBindings[2] = {};
-	descriptorSetLayoutBindings[0].binding = 0;
-	descriptorSetLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorSetLayoutBindings[0].descriptorCount = 1; // ubo -> descriptor <- texture
-	descriptorSetLayoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	descriptorSetLayoutBindings[0].pImmutableSamplers = nullptr; // for texture
-
-	descriptorSetLayoutBindings[1].binding = 1;
-	descriptorSetLayoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorSetLayoutBindings[1].descriptorCount = 1; // ubo -> descriptor <- texture
-	descriptorSetLayoutBindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	descriptorSetLayoutBindings[1].pImmutableSamplers = nullptr; // for texture
-
-	VkDescriptorSetLayout descriptorSetLayout;
-
-	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
-	descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	descriptorSetLayoutCreateInfo.bindingCount = 2;
-	descriptorSetLayoutCreateInfo.pBindings = descriptorSetLayoutBindings;
-
-	vkCreateDescriptorSetLayout(vulkanDevice, &descriptorSetLayoutCreateInfo, nullptr, &descriptorSetLayout);
-
-	VkPushConstantRange pushConstantRange = {};
-	pushConstantRange.offset = 0;
-	pushConstantRange.size = sizeof(glm::mat4) * 2;
-	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
-	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-	pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
-	pipelineLayoutCreateInfo.setLayoutCount = 1;
-	pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout;
-	vkCreatePipelineLayout(vulkanDevice, &pipelineLayoutCreateInfo, nullptr, &s_pipelineLayout);
-
 	VkDescriptorPoolSize descriptorPoolSize = {};
 	descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorPoolSize.descriptorCount = 2;
@@ -202,11 +166,13 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	s_pSphereNode->m_staticMesh = new StaticMesh();
 	s_pSphereNode->m_staticMesh->InitFromFile("Resource/UnitSphere.obj");
 
+	ShaderParameterDescription* pShaderParameterDescription = GetOpaquePassShaderParameterDescription();
+
 	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
 	descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	descriptorSetAllocateInfo.descriptorPool = s_descriptorPool;
 	descriptorSetAllocateInfo.descriptorSetCount = 1;
-	descriptorSetAllocateInfo.pSetLayouts = &descriptorSetLayout;
+	descriptorSetAllocateInfo.pSetLayouts = &pShaderParameterDescription->descriptorSetLayout;
 	if (vkAllocateDescriptorSets(
 		vulkanDevice,
 		&descriptorSetAllocateInfo,
@@ -230,7 +196,7 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
 	graphicsPipelineCreateInfo.stageCount = 2;
 	graphicsPipelineCreateInfo.pStages = shaderStages;
-	graphicsPipelineCreateInfo.layout = s_pipelineLayout;
+	graphicsPipelineCreateInfo.layout = pShaderParameterDescription->pipelineLayout;
 
 	vkCreateGraphicsPipelines(vulkanDevice, nullptr, 1, &graphicsPipelineCreateInfo, nullptr, &s_trianglePipeline);
 }
@@ -243,12 +209,14 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 
 	vkCmdBindPipeline(vulkanCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, s_trianglePipeline);
 
-	vkCmdPushConstants(vulkanCommandBuffer, s_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+	ShaderParameterDescription* pShaderParameterDescription = GetOpaquePassShaderParameterDescription();
+
+	vkCmdPushConstants(vulkanCommandBuffer, pShaderParameterDescription->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
 		0, sizeof(glm::mat4), &s_viewMatrix);
-	vkCmdPushConstants(vulkanCommandBuffer, s_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+	vkCmdPushConstants(vulkanCommandBuffer, pShaderParameterDescription->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
 		sizeof(glm::mat4), sizeof(glm::mat4), &s_projectionMatrix);
 
-	s_pSphereNode->Draw(vulkanCommandBuffer, s_pipelineLayout);
+	s_pSphereNode->Draw(vulkanCommandBuffer, pShaderParameterDescription->pipelineLayout);
 
 	EndSwapChainRenderPass(vulkanCommandBuffer);
 }

@@ -42,6 +42,8 @@ static VkSemaphore s_readyToRenderSemaphore = nullptr;
 static VkSemaphore s_readyToPresentSemaphore = nullptr;
 static uint32_t s_currentFrameBufferToRenderIndex = 0;
 
+static ShaderParameterDescription s_opaqueShaderParameterDescription;
+
 Buffer::Buffer()
 {
 	buffer = nullptr;
@@ -49,6 +51,40 @@ Buffer::Buffer()
 }
 
 Buffer::~Buffer() {
+}
+
+static void InitOpaquePipelineLayout() {
+	VkDescriptorSetLayoutBinding descriptorSetLayoutBindings[2] = {};
+	descriptorSetLayoutBindings[0].binding = 0;
+	descriptorSetLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorSetLayoutBindings[0].descriptorCount = 1; // ubo -> descriptor <- texture
+	descriptorSetLayoutBindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	descriptorSetLayoutBindings[0].pImmutableSamplers = nullptr; // for texture
+
+	descriptorSetLayoutBindings[1].binding = 1;
+	descriptorSetLayoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorSetLayoutBindings[1].descriptorCount = 1; // ubo -> descriptor <- texture
+	descriptorSetLayoutBindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	descriptorSetLayoutBindings[1].pImmutableSamplers = nullptr; // for texture
+
+	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
+	descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	descriptorSetLayoutCreateInfo.bindingCount = _countof(descriptorSetLayoutBindings);
+	descriptorSetLayoutCreateInfo.pBindings = descriptorSetLayoutBindings;
+
+	vkCreateDescriptorSetLayout(s_vulkanDevice, &descriptorSetLayoutCreateInfo, nullptr, &s_opaqueShaderParameterDescription.descriptorSetLayout);
+	VkPushConstantRange pushConstantRange = {};
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(glm::mat4) * 2;
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
+	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+	pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
+	pipelineLayoutCreateInfo.setLayoutCount = 1;
+	pipelineLayoutCreateInfo.pSetLayouts = &s_opaqueShaderParameterDescription.descriptorSetLayout;
+	vkCreatePipelineLayout(s_vulkanDevice, &pipelineLayoutCreateInfo, nullptr, &s_opaqueShaderParameterDescription.pipelineLayout);
 }
 
 Buffer* GenBufferObject(VkDeviceSize inBufferSize, VkBufferUsageFlags inUsageFlags, VkMemoryPropertyFlagBits inMemoryPropertyFlagBits, size_t inDataSize, const void* inData)
@@ -557,6 +593,8 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	vkCreateSemaphore(s_vulkanDevice, &semaphoreCreateInfo, nullptr, &s_readyToRenderSemaphore);
 	vkCreateSemaphore(s_vulkanDevice, &semaphoreCreateInfo, nullptr, &s_readyToPresentSemaphore);
 
+	InitOpaquePipelineLayout();
+
 	return true;
 }
 
@@ -647,4 +685,9 @@ VkPhysicalDevice GetVulkanPhysicalDevice()
 VkRenderPass GetVulkanSwapChainRenderPass()
 {
 	return s_vulkanSwapchainRenderPass;
+}
+
+ShaderParameterDescription* GetOpaquePassShaderParameterDescription()
+{
+	return &s_opaqueShaderParameterDescription;
 }
