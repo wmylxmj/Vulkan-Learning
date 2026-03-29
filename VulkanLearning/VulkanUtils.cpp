@@ -42,7 +42,7 @@ static VkSemaphore s_readyToRenderSemaphore = nullptr;
 static VkSemaphore s_readyToPresentSemaphore = nullptr;
 static uint32_t s_currentFrameBufferToRenderIndex = 0;
 
-static ShaderParameterDescription s_opaqueShaderParameterDescription;
+static ShaderParameterDescription s_uberShaderParameterDescription;
 
 Buffer::Buffer()
 {
@@ -53,7 +53,7 @@ Buffer::Buffer()
 Buffer::~Buffer() {
 }
 
-static void InitOpaquePipelineLayout() {
+static void InitUberPipelineLayout() {
 	VkDescriptorSetLayoutBinding descriptorSetLayoutBindings[2] = {};
 	descriptorSetLayoutBindings[0].binding = 0;
 	descriptorSetLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -72,7 +72,7 @@ static void InitOpaquePipelineLayout() {
 	descriptorSetLayoutCreateInfo.bindingCount = _countof(descriptorSetLayoutBindings);
 	descriptorSetLayoutCreateInfo.pBindings = descriptorSetLayoutBindings;
 
-	vkCreateDescriptorSetLayout(s_vulkanDevice, &descriptorSetLayoutCreateInfo, nullptr, &s_opaqueShaderParameterDescription.descriptorSetLayout);
+	vkCreateDescriptorSetLayout(s_vulkanDevice, &descriptorSetLayoutCreateInfo, nullptr, &s_uberShaderParameterDescription.descriptorSetLayout);
 	VkPushConstantRange pushConstantRange = {};
 	pushConstantRange.offset = 0;
 	pushConstantRange.size = sizeof(glm::mat4) * 2;
@@ -83,8 +83,8 @@ static void InitOpaquePipelineLayout() {
 	pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 	pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
 	pipelineLayoutCreateInfo.setLayoutCount = 1;
-	pipelineLayoutCreateInfo.pSetLayouts = &s_opaqueShaderParameterDescription.descriptorSetLayout;
-	vkCreatePipelineLayout(s_vulkanDevice, &pipelineLayoutCreateInfo, nullptr, &s_opaqueShaderParameterDescription.pipelineLayout);
+	pipelineLayoutCreateInfo.pSetLayouts = &s_uberShaderParameterDescription.descriptorSetLayout;
+	vkCreatePipelineLayout(s_vulkanDevice, &pipelineLayoutCreateInfo, nullptr, &s_uberShaderParameterDescription.pipelineLayout);
 }
 
 Buffer* GenBufferObject(VkDeviceSize inBufferSize, VkBufferUsageFlags inUsageFlags, VkMemoryPropertyFlagBits inMemoryPropertyFlagBits, size_t inDataSize, const void* inData)
@@ -593,7 +593,7 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight)
 	vkCreateSemaphore(s_vulkanDevice, &semaphoreCreateInfo, nullptr, &s_readyToRenderSemaphore);
 	vkCreateSemaphore(s_vulkanDevice, &semaphoreCreateInfo, nullptr, &s_readyToPresentSemaphore);
 
-	InitOpaquePipelineLayout();
+	InitUberPipelineLayout();
 
 	return true;
 }
@@ -687,7 +687,7 @@ VkRenderPass GetVulkanSwapChainRenderPass()
 	return s_vulkanSwapchainRenderPass;
 }
 
-ShaderParameterDescription* GetOpaquePassShaderParameterDescription()
+ShaderParameterDescription* GetUberPassShaderParameterDescription()
 {
-	return &s_opaqueShaderParameterDescription;
+	return &s_uberShaderParameterDescription;
 }

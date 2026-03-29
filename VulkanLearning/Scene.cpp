@@ -10,8 +10,6 @@
 
 VkPipeline s_trianglePipeline = nullptr;
 
-VkDescriptorPool s_descriptorPool = nullptr;
-
 SceneNode* s_pSphereNode = nullptr;
 
 glm::mat4 s_viewMatrix;
@@ -150,37 +148,12 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	shaderStages[1].module = fragmentShaderModule;
 	shaderStages[1].pName = "main";
 
-	VkDescriptorPoolSize descriptorPoolSize = {};
-	descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorPoolSize.descriptorCount = 2;
-
-	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
-	descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	descriptorPoolCreateInfo.maxSets = 1;
-	descriptorPoolCreateInfo.poolSizeCount = 1;
-	descriptorPoolCreateInfo.pPoolSizes = &descriptorPoolSize;
-
-	vkCreateDescriptorPool(vulkanDevice, &descriptorPoolCreateInfo, nullptr, &s_descriptorPool);
-
 	s_pSphereNode = new SceneNode();
 	s_pSphereNode->m_staticMesh = new StaticMesh();
 	s_pSphereNode->m_staticMesh->InitFromFile("Resource/UnitSphere.obj");
+	s_pSphereNode->m_staticMesh->m_material.Init();
 
-	ShaderParameterDescription* pShaderParameterDescription = GetOpaquePassShaderParameterDescription();
-
-	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
-	descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	descriptorSetAllocateInfo.descriptorPool = s_descriptorPool;
-	descriptorSetAllocateInfo.descriptorSetCount = 1;
-	descriptorSetAllocateInfo.pSetLayouts = &pShaderParameterDescription->descriptorSetLayout;
-	if (vkAllocateDescriptorSets(
-		vulkanDevice,
-		&descriptorSetAllocateInfo,
-		&s_pSphereNode->m_staticMesh->m_material.m_descriptorSet
-	) != VK_SUCCESS)
-	{
-		OutputDebugStringA("Failed to allocate descriptor sets!");
-	}
+	ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();
 
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {};
 	graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -209,7 +182,7 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 
 	vkCmdBindPipeline(vulkanCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, s_trianglePipeline);
 
-	ShaderParameterDescription* pShaderParameterDescription = GetOpaquePassShaderParameterDescription();
+	ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();
 
 	vkCmdPushConstants(vulkanCommandBuffer, pShaderParameterDescription->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
 		0, sizeof(glm::mat4), &s_viewMatrix);

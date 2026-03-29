@@ -62,4 +62,4 @@ Buffer* GenBufferObject(
 	const void* inData = nullptr
 );
 
-ShaderParameterDescription* GetOpaquePassShaderParameterDescription();
+ShaderParameterDescription* GetUberPassShaderParameterDescription();

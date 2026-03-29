@@ -51,34 +51,7 @@ void SceneNode::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLay
 
 	if (m_staticMesh != nullptr)
 	{
-		VkDescriptorBufferInfo bufferInfo = {};
-		bufferInfo.buffer = m_uniformBuffer->buffer;
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(glm::mat4) * 1024;
-
-		VkWriteDescriptorSet writeDescriptorSets[1] = {};
-
-		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[0].descriptorCount = 1;
-		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSets[0].pBufferInfo = &bufferInfo;
-		writeDescriptorSets[0].dstArrayElement = 0;
-		writeDescriptorSets[0].dstBinding = 0;
-		writeDescriptorSets[0].dstSet = m_staticMesh->m_material.m_descriptorSet;
-
-		vkUpdateDescriptorSets(GetVulkanDevice(), 1, writeDescriptorSets, 0, nullptr);
-
-		vkCmdBindDescriptorSets(
-			commandBuffer,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			pipelineLayout,
-			0,
-			1,
-			&m_staticMesh->m_material.m_descriptorSet,
-			0,
-			nullptr
-		);
-
+		m_staticMesh->m_material.Activate(commandBuffer, pipelineLayout, m_uniformBuffer->buffer);
 		m_staticMesh->Draw(commandBuffer);
 	}
 }
