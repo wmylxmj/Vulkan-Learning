@@ -7,6 +7,6 @@ layout (location = 0) in vec4 InColor;
 void main() {
 	vec3 normal = normalize(vec3(InColor));
 	vec3 color = normal * 0.5 + 0.5;
-	FragColor = vec4(color, 1.0);
+	FragColor = vec4(color * InColor.a, 1.0);
 }
 

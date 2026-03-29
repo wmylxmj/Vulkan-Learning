@@ -36,6 +36,16 @@ void SceneNode::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLay
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
 			);
+			m_staticMesh->m_material.SetUniformBuffer(0, m_uniformBuffer->buffer, sizeof(glm::mat4) * 1024);
+		}
+		if (m_uniformBuffer1 == nullptr)
+		{
+			m_uniformBuffer1 = GenBufferObject(
+				sizeof(glm::mat4) * 1024,
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+			);
+			m_staticMesh->m_material.SetUniformBuffer(1, m_uniformBuffer1->buffer, sizeof(glm::mat4) * 1024);
 		}
 		{
 			VkDevice device = GetVulkanDevice();
@@ -45,13 +55,21 @@ void SceneNode::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLay
 			memcpy((glm::mat4*)pMemory + 1, &m_normalMatrix, sizeof(glm::mat4));
 			vkUnmapMemory(device, m_uniformBuffer->memory);
 		}
+		{
+			float scaleX[] = { 0.5f, 0.0f, 0.0f, 0.0f };
+			VkDevice device = GetVulkanDevice();
+			void* pMemory = nullptr;
+			vkMapMemory(device, m_uniformBuffer1->memory, 0, sizeof(glm::mat4) * 1024, 0, &pMemory);
+			memcpy(pMemory, &scaleX, sizeof(glm::vec4));
+			vkUnmapMemory(device, m_uniformBuffer1->memory);
+		}
 
 		m_needUpdate = false;
 	}
 
 	if (m_staticMesh != nullptr)
 	{
-		m_staticMesh->m_material.Activate(commandBuffer, pipelineLayout, m_uniformBuffer->buffer);
+		m_staticMesh->m_material.Activate(commandBuffer, pipelineLayout);
 		m_staticMesh->Draw(commandBuffer);
 	}
 }

@@ -36,12 +36,12 @@ void Material::Init()
 	}
 }
 
-void Material::Activate(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkBuffer uniformBuffer)
+void Material::SetUniformBuffer(uint32_t dstBinding, VkBuffer uniformBuffer, uint32_t uniformBufferSize)
 {
 	VkDescriptorBufferInfo bufferInfo = {};
 	bufferInfo.buffer = uniformBuffer;
 	bufferInfo.offset = 0;
-	bufferInfo.range = sizeof(glm::mat4) * 1024;
+	bufferInfo.range = uniformBufferSize;
 
 	VkWriteDescriptorSet writeDescriptorSets[1] = {};
 
@@ -50,11 +50,14 @@ void Material::Activate(VkCommandBuffer commandBuffer, VkPipelineLayout pipeline
 	writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	writeDescriptorSets[0].pBufferInfo = &bufferInfo;
 	writeDescriptorSets[0].dstArrayElement = 0;
-	writeDescriptorSets[0].dstBinding = 0;
+	writeDescriptorSets[0].dstBinding = dstBinding;
 	writeDescriptorSets[0].dstSet = m_descriptorSet;
 
 	vkUpdateDescriptorSets(GetVulkanDevice(), 1, writeDescriptorSets, 0, nullptr);
+}
 
+void Material::Activate(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
+{
 	vkCmdBindDescriptorSets(
 		commandBuffer,
 		VK_PIPELINE_BIND_POINT_GRAPHICS,

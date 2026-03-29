@@ -16,6 +16,7 @@ public:
 
 	StaticMesh* m_staticMesh;
 	Buffer* m_uniformBuffer;
+	Buffer* m_uniformBuffer1;
 
 	glm::vec4 m_position;
 	glm::quat m_rotation;
