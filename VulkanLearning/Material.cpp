@@ -1,12 +1,17 @@
 #include "Material.h"
+#include "StaticMesh.h"
 
 Material::Material()
 {
 	m_descriptorSet = nullptr;
+	m_pipeline = nullptr;
 }
 
-void Material::Init()
+void Material::Init(const char* vertexShaderPath, const char* fragmentShaderPath)
 {
+	m_vertexShaderModule = CompileShader(vertexShaderPath);
+	m_fragmentShaderModule = CompileShader(fragmentShaderPath);
+
 	ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();
 
 	VkDescriptorPoolSize descriptorPoolSize = {};
@@ -58,6 +63,16 @@ void Material::SetUniformBuffer(uint32_t dstBinding, VkBuffer uniformBuffer, uin
 
 void Material::Activate(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
 {
+	if (m_pipeline == nullptr) {
+		m_pipeline = CreatePipeline(
+			StaticMesh::sm_vertexInputBindingDescriptions,
+			StaticMesh::sm_vertexInputAttributeDescriptions,
+			m_vertexShaderModule,
+			m_fragmentShaderModule
+		);
+	}
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+
 	vkCmdBindDescriptorSets(
 		commandBuffer,
 		VK_PIPELINE_BIND_POINT_GRAPHICS,

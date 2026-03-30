@@ -63,3 +63,12 @@ Buffer* GenBufferObject(
 );
 
 ShaderParameterDescription* GetUberPassShaderParameterDescription();
+
+VkPipeline CreatePipeline(
+	const std::vector<VkVertexInputBindingDescription>& inVertexInputBindingDescriptions,
+	const std::vector<VkVertexInputAttributeDescription>& inVertexInputAttributeDescriptions,
+	const VkShaderModule inVertexShaderModule,
+	const VkShaderModule inFragmentShaderModule
+);
+
+VkShaderModule CompileShader(const char* inFilePath);
