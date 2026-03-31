@@ -56,11 +56,15 @@ void SceneNode::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLay
 			vkUnmapMemory(device, m_uniformBuffer->memory);
 		}
 		{
-			float scaleX[] = { 0.5f, 0.0f, 0.0f, 0.0f };
+			float uniformBuffer1Data[] = {
+				1.0f, 0.0f, 0.0f, 0.0f,
+				-1.0f, 0.0f, 0.0f, 0.0f,
+				1.0f, 0.0f, 0.0f, 0.0f,
+			};
 			VkDevice device = GetVulkanDevice();
 			void* pMemory = nullptr;
 			vkMapMemory(device, m_uniformBuffer1->memory, 0, sizeof(glm::mat4) * 1024, 0, &pMemory);
-			memcpy(pMemory, &scaleX, sizeof(glm::vec4));
+			memcpy(pMemory, &uniformBuffer1Data, sizeof(uniformBuffer1Data));
 			vkUnmapMemory(device, m_uniformBuffer1->memory);
 		}
 

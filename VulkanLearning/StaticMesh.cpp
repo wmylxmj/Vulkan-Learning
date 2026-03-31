@@ -71,12 +71,12 @@ void StaticMesh::Draw(VkCommandBuffer commandBuffer)
 	if (!m_subMeshes.empty()) {
 		for (auto& subMesh : m_subMeshes) {
 			vkCmdBindIndexBuffer(commandBuffer, subMesh.second->pIndexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
-			vkCmdDrawIndexed(commandBuffer, subMesh.second->indexCount, 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, subMesh.second->indexCount, 2, 0, 0, 0);
 		}
 	}
 	else
 	{
-		vkCmdDraw(commandBuffer, m_vertexCount, 1, 0, 0);
+		vkCmdDraw(commandBuffer, m_vertexCount, 2, 0, 0);
 	}
 }
 

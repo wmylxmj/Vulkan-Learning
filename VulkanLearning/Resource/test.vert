@@ -1,4 +1,5 @@
 #version 430
+#extension GL_KHR_vulkan_glsl : enable
 
 layout (location = 0) in vec4 position;
 layout (location = 1) in vec4 texcoord;
@@ -18,8 +19,7 @@ layout (binding = 0) uniform ub0 {
 
 layout (binding = 1) uniform ub1 {
 	vec4 ub1_x;
-    vec4 ub1_y;
-    vec4 ub1_z;
+    vec4 ub1_offsets[2];
     vec4 ub1_w;
 	mat4 ub1_reserved[1023];
 };
@@ -27,7 +27,11 @@ layout (binding = 1) uniform ub1 {
 layout (location = 0) out vec4 v_color;
 
 void main() {
+    uint instanceID = gl_InstanceIndex;
+
 	v_color = ub0_normalMatrix * normal;
 	v_color.a = ub1_x.x;
-	gl_Position = projectionMatrix * viewMatrix * ub0_modelMatrix * position;
+	vec4 offset = ub1_offsets[instanceID];
+	vec4 positionMS = vec4(position.xyz + offset.xyz, 1.0);
+	gl_Position = projectionMatrix * viewMatrix * ub0_modelMatrix * positionMS;
 }
