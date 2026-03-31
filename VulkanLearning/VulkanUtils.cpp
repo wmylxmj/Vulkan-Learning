@@ -622,7 +622,7 @@ void BeginCommandBuffer(VkCommandBuffer inCommandBuffer, VkCommandBufferUsageFla
 	vkBeginCommandBuffer(inCommandBuffer, &commandBufferBeginInfo);
 }
 
-void BeginSwapChainRenderPass(VkCommandBuffer inCommandBuffer)
+uint32_t BeginSwapChainRenderPass(VkCommandBuffer inCommandBuffer)
 {
 	vkAcquireNextImageKHR(s_vulkanDevice, s_vulkanSwapchain, 1000000, s_readyToRenderSemaphore, nullptr, &s_currentFrameBufferToRenderIndex);
 
@@ -638,6 +638,8 @@ void BeginSwapChainRenderPass(VkCommandBuffer inCommandBuffer)
 	renderPassBeginInfo.renderArea.extent = s_vulkanSurfaceCapabilities.currentExtent;
 	renderPassBeginInfo.renderPass = s_vulkanSwapchainRenderPass;
 	vkCmdBeginRenderPass(inCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+	return s_currentFrameBufferToRenderIndex;
 }
 
 void EndSwapChainRenderPass(VkCommandBuffer inCommandBuffer)
@@ -840,4 +842,9 @@ VkShaderModule CompileShader(const char* inFilePath)
 		return shader;
 	}
 	return nullptr;
+}
+
+VkFramebuffer* GetSwapChainFrameBuffers()
+{
+	return s_vulkanSwapchainFramebuffers;
 }

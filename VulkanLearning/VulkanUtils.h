@@ -47,7 +47,7 @@ bool InitVulkan(void* inUserData, int inWidth, int inHeight);
 VkCommandBuffer CreateCommandBuffer(VkCommandBufferLevel inCommandBufferLevel = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
 void BeginCommandBuffer(VkCommandBuffer inCommandBuffer, VkCommandBufferUsageFlags inUsageFlags);
-void BeginSwapChainRenderPass(VkCommandBuffer inCommandBuffer);
+uint32_t BeginSwapChainRenderPass(VkCommandBuffer inCommandBuffer);
 void EndSwapChainRenderPass(VkCommandBuffer inCommandBuffer);
 
 VkDevice GetVulkanDevice();
@@ -72,3 +72,5 @@ VkPipeline CreatePipeline(
 );
 
 VkShaderModule CompileShader(const char* inFilePath);
+
+VkFramebuffer* GetSwapChainFrameBuffers();

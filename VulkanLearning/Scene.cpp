@@ -13,6 +13,8 @@ SceneNode* s_pSphereNode = nullptr;
 glm::mat4 s_viewMatrix;
 glm::mat4 s_projectionMatrix;
 
+VkCommandBuffer s_pushConstantsCommandBuffers[2];
+
 void InitScene(int inCanvasWidth, int inCanvasHeight)
 {
 	s_viewMatrix = glm::lookAt(
@@ -21,6 +23,30 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		glm::vec3(0.0f, 1.0f, 0.0f)
 	);
 	s_projectionMatrix = glm::perspective(glm::radians(60.0f), 1280.0f / 720.f, 0.1f, 100.0f);
+
+	VkFramebuffer* pSwapChainFramebuffers = GetSwapChainFrameBuffers();
+
+	for (int i = 0; i < 2; ++i) {
+		s_pushConstantsCommandBuffers[i] = CreateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+		VkCommandBufferInheritanceInfo commandBufferInheritanceInfo = {};
+		commandBufferInheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+		commandBufferInheritanceInfo.framebuffer = pSwapChainFramebuffers[i];
+		commandBufferInheritanceInfo.renderPass = GetVulkanSwapChainRenderPass();
+		VkCommandBufferBeginInfo commandBufferBeginInfo = {};
+		commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+		commandBufferBeginInfo.pInheritanceInfo = &commandBufferInheritanceInfo;
+		vkBeginCommandBuffer(s_pushConstantsCommandBuffers[i], &commandBufferBeginInfo);
+
+		ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();
+		vkCmdPushConstants(s_pushConstantsCommandBuffers[i], pShaderParameterDescription->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT,
+			0, sizeof(glm::mat4), &s_viewMatrix);
+		vkCmdPushConstants(s_pushConstantsCommandBuffers[i], pShaderParameterDescription->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT,
+			sizeof(glm::mat4), sizeof(glm::mat4), &s_projectionMatrix);
+		vkEndCommandBuffer(s_pushConstantsCommandBuffers[i]);
+	}
 
 	StaticMesh::Initialize();
 	VkDevice vulkanDevice = GetVulkanDevice();
@@ -35,16 +61,12 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 {
 	VkCommandBuffer vulkanCommandBuffer = CreateCommandBuffer();
 	BeginCommandBuffer(vulkanCommandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-	BeginSwapChainRenderPass(vulkanCommandBuffer);
+	uint32_t swapChainFrameIndex = BeginSwapChainRenderPass(vulkanCommandBuffer);
 
-	ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();
+	vkCmdExecuteCommands(vulkanCommandBuffer, 1, &s_pushConstantsCommandBuffers[swapChainFrameIndex]);
 
-	vkCmdPushConstants(vulkanCommandBuffer, pShaderParameterDescription->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-		0, sizeof(glm::mat4), &s_viewMatrix);
-	vkCmdPushConstants(vulkanCommandBuffer, pShaderParameterDescription->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-		sizeof(glm::mat4), sizeof(glm::mat4), &s_projectionMatrix);
-
-	s_pSphereNode->Draw(vulkanCommandBuffer, pShaderParameterDescription->pipelineLayout);
+	//	ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();
+	//	s_pSphereNode->Draw(vulkanCommandBuffer, pShaderParameterDescription->pipelineLayout);
 
 	EndSwapChainRenderPass(vulkanCommandBuffer);
 }
