@@ -160,6 +160,9 @@ static bool InitVulkanInstance()
 		{
 			s_ppPreferredEnabledLayers[s_preferredEnabledLayerCount] = new char[strlen(layerProperties[i].layerName) + 1];
 			strcpy_s(s_ppPreferredEnabledLayers[s_preferredEnabledLayerCount], strlen(layerProperties[i].layerName) + 1, layerProperties[i].layerName);
+			std::string debugString = "Found Validation Layer: " + std::string(layerProperties[i].layerName) + "\n";
+			OutputDebugStringA(debugString.c_str());
+			++s_preferredEnabledLayerCount;
 		}
 	}
 
@@ -634,7 +637,7 @@ void BeginSwapChainRenderPass(VkCommandBuffer inCommandBuffer)
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = s_vulkanSurfaceCapabilities.currentExtent;
 	renderPassBeginInfo.renderPass = s_vulkanSwapchainRenderPass;
-	vkCmdBeginRenderPass(inCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(inCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 }
 
 void EndSwapChainRenderPass(VkCommandBuffer inCommandBuffer)
