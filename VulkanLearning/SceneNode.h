@@ -12,7 +12,8 @@ public:
 	void SetPosition(glm::vec4 position);
 	void SetRotation(glm::quat rotation);
 	void SetScale(glm::vec4 scale);
-	void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+	void Draw(VkCommandBuffer commandBuffer, glm::mat4& viewMatrix, glm::mat4& projectionMatrix);
+	void GenerateDrawCommand(glm::mat4& viewMatrix, glm::mat4& projectionMatrix);
 
 	StaticMesh* m_staticMesh;
 	Buffer* m_uniformBuffer;
@@ -24,4 +25,7 @@ public:
 	bool m_needUpdate;
 	glm::mat4 m_modelMatrix;
 	glm::mat4 m_normalMatrix;
+
+	bool m_isDrawCommandGenerated;
+	VkCommandBuffer* m_pCachedDrawCommandBuffer;
 };

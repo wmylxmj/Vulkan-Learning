@@ -4,6 +4,7 @@ SceneNode::SceneNode() :
 	m_scale(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f))
 {
 	m_needUpdate = true;
+	m_isDrawCommandGenerated = false;
 }
 
 void SceneNode::SetPosition(glm::vec4 position)
@@ -20,7 +21,9 @@ void SceneNode::SetScale(glm::vec4 scale)
 {
 }
 
-void SceneNode::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
+static bool s_useCachedCommandBuffer = true;
+
+void SceneNode::Draw(VkCommandBuffer commandBuffer, glm::mat4& viewMatrix, glm::mat4& projectionMatrix)
 {
 	if (m_needUpdate)
 	{
@@ -71,9 +74,55 @@ void SceneNode::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLay
 		m_needUpdate = false;
 	}
 
-	if (m_staticMesh != nullptr)
-	{
-		m_staticMesh->m_material.Activate(commandBuffer, pipelineLayout);
-		m_staticMesh->Draw(commandBuffer);
+	if (s_useCachedCommandBuffer) {
+		GenerateDrawCommand(viewMatrix, projectionMatrix);
+	}
+	else {
+		if (m_staticMesh != nullptr)
+		{
+			ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();
+
+			m_staticMesh->m_material.Activate(commandBuffer, pShaderParameterDescription->pipelineLayout);
+			m_staticMesh->Draw(commandBuffer);
+		}
+	}
+}
+
+void SceneNode::GenerateDrawCommand(glm::mat4& viewMatrix, glm::mat4& projectionMatrix)
+{
+	if (m_isDrawCommandGenerated) return;
+
+	m_isDrawCommandGenerated = true;
+	m_pCachedDrawCommandBuffer = new VkCommandBuffer[2];
+
+	VkFramebuffer* pSwapChainFramebuffers = GetSwapChainFrameBuffers();
+	ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();
+
+	for (int i = 0; i < 2; ++i) {
+		m_pCachedDrawCommandBuffer[i] = CreateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+		VkCommandBufferInheritanceInfo commandBufferInheritanceInfo = {};
+		commandBufferInheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+		commandBufferInheritanceInfo.framebuffer = pSwapChainFramebuffers[i];
+		commandBufferInheritanceInfo.renderPass = GetVulkanSwapChainRenderPass();
+		VkCommandBufferBeginInfo commandBufferBeginInfo = {};
+		commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+		commandBufferBeginInfo.pInheritanceInfo = &commandBufferInheritanceInfo;
+		vkBeginCommandBuffer(m_pCachedDrawCommandBuffer[i], &commandBufferBeginInfo);
+
+		vkCmdPushConstants(m_pCachedDrawCommandBuffer[i], pShaderParameterDescription->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT,
+			0, sizeof(glm::mat4), &viewMatrix);
+		vkCmdPushConstants(m_pCachedDrawCommandBuffer[i], pShaderParameterDescription->pipelineLayout,
+			VK_SHADER_STAGE_VERTEX_BIT,
+			sizeof(glm::mat4), sizeof(glm::mat4), &projectionMatrix);
+
+		if (m_staticMesh != nullptr)
+		{
+			m_staticMesh->m_material.Activate(m_pCachedDrawCommandBuffer[i], pShaderParameterDescription->pipelineLayout);
+			m_staticMesh->Draw(m_pCachedDrawCommandBuffer[i]);
+		}
+
+		vkEndCommandBuffer(m_pCachedDrawCommandBuffer[i]);
 	}
 }
