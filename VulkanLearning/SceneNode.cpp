@@ -5,6 +5,7 @@ SceneNode::SceneNode() :
 {
 	m_needUpdate = true;
 	m_isDrawCommandGenerated = false;
+	m_pCachedDrawCommandBuffer = nullptr;
 }
 
 void SceneNode::SetPosition(glm::vec4 position)
@@ -19,6 +20,8 @@ void SceneNode::SetRotation(glm::quat rotation)
 
 void SceneNode::SetScale(glm::vec4 scale)
 {
+	m_scale = scale;
+	m_needUpdate = true;
 }
 
 static bool s_useCachedCommandBuffer = true;

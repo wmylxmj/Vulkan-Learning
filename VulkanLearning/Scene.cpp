@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <cstdio>
 #include <string>
+#include <thread>
 
 SceneNode* s_pSphereNode = nullptr;
 
@@ -55,6 +56,18 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	s_pSphereNode->m_staticMesh = new StaticMesh();
 	s_pSphereNode->m_staticMesh->InitFromFile("Resource/UnitSphere.obj");
 	s_pSphereNode->m_staticMesh->m_material.Init("Resource/test.vsb", "Resource/test.fsb");
+
+	std::thread* pThread = new std::thread([]()-> void {
+		Sleep(5000);
+		OutputDebugStringA("Set Sphere Scale\n");
+		//s_pSphereNode->SetScale(glm::vec4(0.5f, 0.5f, 0.5f, 0.0f));
+		s_viewMatrix = glm::lookAt(
+			glm::vec3(4.0f, 4.0f, 4.0f),
+			glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::vec3(0.0f, 1.0f, 0.0f)
+		);
+	});
+	pThread->detach();
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
