@@ -30,6 +30,27 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	s_pSphereNode->m_staticMesh = new StaticMesh();
 	s_pSphereNode->m_staticMesh->InitFromFile("Resource/UnitSphere.obj");
 	s_pSphereNode->m_staticMesh->m_material.Init("Resource/test.vsb", "Resource/test.fsb");
+
+	int imageWidth = 0;
+	int imageHeight = 0;
+	void* pixelData = nullptr;
+
+	Texture* pTexture = new Texture[1];
+	pTexture->format = VK_FORMAT_R8G8B8A8_UNORM;
+	pTexture->aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+	GenImage(
+		pTexture,
+		imageWidth,
+		imageHeight,
+		pTexture->format,
+		VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+	);
+	pTexture->imageView = GenImageView2D(
+		pTexture->image,
+		pTexture->format,
+		pTexture->aspectFlags
+	);
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)

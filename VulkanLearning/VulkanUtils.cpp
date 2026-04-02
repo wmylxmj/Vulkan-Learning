@@ -417,7 +417,14 @@ void InitSwapChainRenderTarget()
 	}
 }
 
-void GenImage(Texture* inOutTexture, uint32_t inWidth, uint32_t inHeight, VkFormat inFormat, VkImageUsageFlags inUsageFlags)
+void GenImage(
+	Texture* inOutTexture,
+	uint32_t inWidth,
+	uint32_t inHeight,
+	VkFormat inFormat,
+	VkImageUsageFlags inUsageFlags,
+	VkMemoryPropertyFlagBits inMemoryPropertyFlagBits
+)
 {
 	VkImageCreateInfo imageCreateInfo = {};
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -445,7 +452,7 @@ void GenImage(Texture* inOutTexture, uint32_t inWidth, uint32_t inHeight, VkForm
 	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i)
 	{
 		if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
-			(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) // от╢Ф
+			(memoryProperties.memoryTypes[i].propertyFlags & inMemoryPropertyFlagBits)) // от╢Ф
 		{
 			memoryAllocateInfo.memoryTypeIndex = i;
 			break;
@@ -465,7 +472,8 @@ void InitSwapChainDSRT()
 		s_vulkanSurfaceCapabilities.currentExtent.width,
 		s_vulkanSurfaceCapabilities.currentExtent.height,
 		s_vulkanSwapchainDSRTs->format,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	);
 	s_vulkanSwapchainDSRTs->imageView = GenImageView2D(
 		s_vulkanSwapchainDSRTs->image,

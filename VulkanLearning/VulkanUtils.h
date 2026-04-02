@@ -74,3 +74,13 @@ VkPipeline CreatePipeline(
 VkShaderModule CompileShader(const char* inFilePath);
 
 VkFramebuffer* GetSwapChainFrameBuffers();
+
+void GenImage(
+	Texture* inOutTexture,
+	uint32_t inWidth,
+	uint32_t inHeight,
+	VkFormat inFormat,
+	VkImageUsageFlags inUsageFlags,
+	VkMemoryPropertyFlagBits inMemoryPropertyFlagBits
+);
+VkImageView GenImageView2D(VkImage inImage, VkFormat inFormat, VkImageAspectFlags inAspectFlags);
