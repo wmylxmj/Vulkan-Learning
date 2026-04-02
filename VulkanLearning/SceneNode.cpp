@@ -24,7 +24,7 @@ void SceneNode::SetScale(glm::vec4 scale)
 	m_needUpdate = true;
 }
 
-static bool s_useCachedCommandBuffer = true;
+static bool s_useCachedCommandBuffer = false;
 
 void SceneNode::Draw(VkCommandBuffer commandBuffer, glm::mat4& viewMatrix, glm::mat4& projectionMatrix)
 {

@@ -637,7 +637,7 @@ uint32_t BeginSwapChainRenderPass(VkCommandBuffer inCommandBuffer)
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = s_vulkanSurfaceCapabilities.currentExtent;
 	renderPassBeginInfo.renderPass = s_vulkanSwapchainRenderPass;
-	vkCmdBeginRenderPass(inCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+	vkCmdBeginRenderPass(inCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	return s_currentFrameBufferToRenderIndex;
 }
