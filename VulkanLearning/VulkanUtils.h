@@ -84,3 +84,9 @@ void GenImage(
 	VkMemoryPropertyFlagBits inMemoryPropertyFlagBits
 );
 VkImageView GenImageView2D(VkImage inImage, VkFormat inFormat, VkImageAspectFlags inAspectFlags);
+
+void TransferImageLayout(
+	VkCommandBuffer inCommandBuffer, VkImage inImage,
+	VkImageLayout inOldLayout, VkAccessFlags inOldAccessFlags, VkPipelineStageFlags inOldPipelineStage,
+	VkImageLayout inNewLayout, VkAccessFlags inNewAccessFlags, VkPipelineStageFlags inNewPipelineStage
+);

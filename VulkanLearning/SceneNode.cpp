@@ -64,8 +64,8 @@ void SceneNode::Draw(VkCommandBuffer commandBuffer, glm::mat4& viewMatrix, glm::
 		{
 			float uniformBuffer1Data[] = {
 				1.0f, 0.0f, 0.0f, 0.0f,
-				-1.0f, 0.0f, 0.0f, 0.0f,
-				1.0f, 0.0f, 0.0f, 0.0f,
+				-100.0f, 0.0f, 0.0f, 0.0f,
+				100.0f, 0.0f, 0.0f, 0.0f,
 			};
 			VkDevice device = GetVulkanDevice();
 			void* pMemory = nullptr;

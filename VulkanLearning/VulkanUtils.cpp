@@ -856,3 +856,31 @@ VkFramebuffer* GetSwapChainFrameBuffers()
 {
 	return s_vulkanSwapchainFramebuffers;
 }
+
+void TransferImageLayout(
+	VkCommandBuffer inCommandBuffer, VkImage inImage,
+	VkImageLayout inOldLayout, VkAccessFlags inOldAccessFlags, VkPipelineStageFlags inOldPipelineStage,
+	VkImageLayout inNewLayout, VkAccessFlags inNewAccessFlags, VkPipelineStageFlags inNewPipelineStage
+)
+{
+	VkImageMemoryBarrier imageMemoryBarrier = {};
+	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imageMemoryBarrier.oldLayout = inOldLayout;
+	imageMemoryBarrier.newLayout = inNewLayout;
+	imageMemoryBarrier.srcAccessMask = inOldAccessFlags;
+	imageMemoryBarrier.dstAccessMask = inNewAccessFlags;
+	imageMemoryBarrier.image = inImage;
+	imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+	imageMemoryBarrier.subresourceRange.levelCount = 1;
+	imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+	imageMemoryBarrier.subresourceRange.layerCount = 1;
+	vkCmdPipelineBarrier(
+		inCommandBuffer,
+		inOldPipelineStage,
+		inNewPipelineStage,
+		0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier
+	);
+}

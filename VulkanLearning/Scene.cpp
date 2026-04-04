@@ -55,8 +55,13 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 
 	VkCommandBuffer commandBuffer = CreateCommandBuffer();
 	BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-	// 资源状态转换 -> 转换为传输目标状态
 
+	// 资源状态转换 -> 转换为传输目标状态
+	TransferImageLayout(
+		commandBuffer, pTexture->image,
+		VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+	);
 	// 创建上传堆
 	Buffer* pUploadBuffer = GenBufferObject(
 		imageSize,
@@ -88,6 +93,11 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	}
 
 	// 资源状态转换 -> 转换为采样状态
+	TransferImageLayout(
+		commandBuffer, pTexture->image,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+	);
 
 	vkEndCommandBuffer(commandBuffer);
 	/*
