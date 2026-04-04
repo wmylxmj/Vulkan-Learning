@@ -686,6 +686,11 @@ void EndSwapChainRenderPass(VkCommandBuffer inCommandBuffer)
 	vkFreeCommandBuffers(s_vulkanDevice, s_vulkanCommandPool, 1, &inCommandBuffer);
 }
 
+VkQueue GetGraphicsQueue()
+{
+	return s_vulkanGraphicsQueue;
+}
+
 VkDevice GetVulkanDevice()
 {
 	return s_vulkanDevice;
@@ -882,5 +887,26 @@ void TransferImageLayout(
 		inOldPipelineStage,
 		inNewPipelineStage,
 		0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier
+	);
+}
+
+void SubmitBufferDataToImage(
+	VkCommandBuffer inCommandBuffer,
+	VkBuffer inBuffer, VkImage inImage,
+	uint32_t inImageWidth, uint32_t inImageHeight
+)
+{
+	VkBufferImageCopy bufferImageCopy = {};
+	bufferImageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	bufferImageCopy.imageSubresource.baseArrayLayer = 0;
+	bufferImageCopy.imageSubresource.layerCount = 1;
+	bufferImageCopy.imageSubresource.mipLevel = 0;
+
+	bufferImageCopy.imageOffset = { 0, 0, 0 };
+	bufferImageCopy.imageExtent = { inImageWidth, inImageHeight, 1 };
+
+	vkCmdCopyBufferToImage(
+		inCommandBuffer, inBuffer, inImage,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bufferImageCopy
 	);
 }

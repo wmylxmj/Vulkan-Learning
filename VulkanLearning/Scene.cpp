@@ -39,7 +39,7 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		"Resource/Models/Planet/Texture/Planet_Diffuse.png",
 		&imageWidth, &imageHeight, &imageChannels, 4
 	);
-	VkDeviceSize imageSize = imageWidth * imageHeight * 4;
+	int imageSize = imageWidth * imageHeight * 4;
 
 	Texture* pTexture = new Texture[1];
 	pTexture->format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -59,7 +59,7 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	// 资源状态转换 -> 转换为传输目标状态
 	TransferImageLayout(
 		commandBuffer, pTexture->image,
-		VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		VK_IMAGE_LAYOUT_UNDEFINED, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
 	);
 	// 创建上传堆
@@ -76,21 +76,11 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	vkUnmapMemory(vulkanDevice, pUploadBuffer->memory);
 
 	// 将上传堆数据拷贝到显存
-	{
-		VkBufferImageCopy bufferImageCopy = {};
-		bufferImageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		bufferImageCopy.imageSubresource.baseArrayLayer = 0;
-		bufferImageCopy.imageSubresource.layerCount = 1;
-		bufferImageCopy.imageSubresource.mipLevel = 0;
-
-		bufferImageCopy.imageOffset = { 0, 0, 0 };
-		bufferImageCopy.imageExtent = { (uint32_t)imageWidth, (uint32_t)imageHeight, 1 };
-
-		vkCmdCopyBufferToImage(
-			commandBuffer, pUploadBuffer->buffer, pTexture->image,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bufferImageCopy
-		);
-	}
+	SubmitBufferDataToImage(
+		commandBuffer,
+		pUploadBuffer->buffer, pTexture->image,
+		imageWidth, imageHeight
+	);
 
 	// 资源状态转换 -> 转换为采样状态
 	TransferImageLayout(
@@ -100,35 +90,25 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	);
 
 	vkEndCommandBuffer(commandBuffer);
-	/*
-	// Submit Command Buffer
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+	VkFence fence;
+	VkFenceCreateInfo fenceCreateInfo = {};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	vkCreateFence(vulkanDevice, &fenceCreateInfo, nullptr, &fence);
+	vkResetFences(vulkanDevice, 1, &fence);
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &inCommandBuffer;
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = &s_readyToRenderSemaphore;
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &s_readyToPresentSemaphore;
-	vkQueueSubmit(s_vulkanGraphicsQueue, 1, &submitInfo, nullptr);
-
-	// Present
-	VkPresentInfoKHR presentInfo = {};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &s_readyToPresentSemaphore;
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = &s_vulkanSwapchain;
-	presentInfo.pImageIndices = &s_currentFrameBufferToRenderIndex;
-	vkQueuePresentKHR(s_vulkanPresentQueue, &presentInfo);
-	vkQueueWaitIdle(s_vulkanPresentQueue);
-
-	s_currentFrameBufferToRenderIndex = (s_currentFrameBufferToRenderIndex + 1) % s_vulkanSwapchainImageCount;
-
-	vkFreeCommandBuffers(s_vulkanDevice, s_vulkanCommandPool, 1, &inCommandBuffer);
-	*/
+	submitInfo.pCommandBuffers = &commandBuffer;
+	vkQueueSubmit(GetGraphicsQueue(), 1, &submitInfo, fence);
+	VkResult result = vkWaitForFences(vulkanDevice, 1, &fence, true, UINT64_MAX);
+	if (result == VK_SUCCESS)
+	{
+		OutputDebugStringA("Upload image to texture success.\n");
+	}
+	vkDestroyBuffer(vulkanDevice, pUploadBuffer->buffer, nullptr);
+	vkFreeMemory(vulkanDevice, pUploadBuffer->memory, nullptr);
 
 	pTexture->imageView = GenImageView2D(
 		pTexture->image,

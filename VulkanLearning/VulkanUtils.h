@@ -50,6 +50,7 @@ void BeginCommandBuffer(VkCommandBuffer inCommandBuffer, VkCommandBufferUsageFla
 uint32_t BeginSwapChainRenderPass(VkCommandBuffer inCommandBuffer);
 void EndSwapChainRenderPass(VkCommandBuffer inCommandBuffer);
 
+VkQueue GetGraphicsQueue();
 VkDevice GetVulkanDevice();
 VkPhysicalDevice GetVulkanPhysicalDevice();
 VkRenderPass GetVulkanSwapChainRenderPass();
@@ -89,4 +90,10 @@ void TransferImageLayout(
 	VkCommandBuffer inCommandBuffer, VkImage inImage,
 	VkImageLayout inOldLayout, VkAccessFlags inOldAccessFlags, VkPipelineStageFlags inOldPipelineStage,
 	VkImageLayout inNewLayout, VkAccessFlags inNewAccessFlags, VkPipelineStageFlags inNewPipelineStage
+);
+
+void SubmitBufferDataToImage(
+	VkCommandBuffer inCommandBuffer,
+	VkBuffer inBuffer, VkImage inImage,
+	uint32_t inImageWidth, uint32_t inImageHeight
 );
