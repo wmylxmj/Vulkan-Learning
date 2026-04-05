@@ -24,13 +24,14 @@ layout (binding = 1) uniform ub1 {
 	mat4 ub1_reserved[1023];
 };
 
-layout (location = 0) out vec4 v_color;
+layout (location = 0) out vec4 v_texcoord;
+layout (location = 1) out vec4 v_normalWorldSpace;
 
 void main() {
     uint instanceID = gl_InstanceIndex;
 
-	v_color = ub0_normalMatrix * normal;
-	v_color.a = ub1_x.x;
+	v_normalWorldSpace = ub0_normalMatrix * normal;
+	v_texcoord = texcoord;
 	vec4 offset = ub1_offsets[instanceID];
 	vec4 positionMS = vec4(position.xyz + offset.xyz, 1.0);
 	gl_Position = projectionMatrix * viewMatrix * ub0_modelMatrix * positionMS;
