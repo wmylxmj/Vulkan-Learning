@@ -141,7 +141,6 @@
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneNode.cpp" />
     <ClCompile Include="StaticMesh.cpp" />
-    <ClCompile Include="stb\stb_image.c" />
     <ClCompile Include="VulkanUtils.cpp" />
     <ClCompile Include="WinMain.cpp" />
   </ItemGroup>

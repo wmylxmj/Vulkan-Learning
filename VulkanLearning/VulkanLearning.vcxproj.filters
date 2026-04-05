@@ -33,9 +33,6 @@
     <ClCompile Include="Material.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="stb\stb_image.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VulkanUtils.h">

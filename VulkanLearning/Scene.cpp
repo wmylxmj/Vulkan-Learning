@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <string>
 #include <thread>
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
 SceneNode* s_pSphereNode = nullptr;
@@ -27,11 +28,7 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	StaticMesh::Initialize();
 	VkDevice vulkanDevice = GetVulkanDevice();
 
-	s_pSphereNode = new SceneNode();
-	s_pSphereNode->m_staticMesh = new StaticMesh();
-	s_pSphereNode->m_staticMesh->InitFromFile("Resource/Models/Planet/Planet.obj");
-	s_pSphereNode->m_staticMesh->m_material.Init("Resource/test.vsb", "Resource/test.fsb");
-
+	stbi_set_flip_vertically_on_load(true);
 	int imageWidth = 0;
 	int imageHeight = 0;
 	int imageChannels = 0;
@@ -115,6 +112,24 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		pTexture->format,
 		pTexture->aspectFlags
 	);
+
+	VkSampler sampler = nullptr;
+	VkSamplerCreateInfo samplerCreateInfo = {};
+	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
+	samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
+	samplerCreateInfo.anisotropyEnable = false;
+	samplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	vkCreateSampler(vulkanDevice, &samplerCreateInfo, nullptr, &sampler);
+
+	s_pSphereNode = new SceneNode();
+	s_pSphereNode->m_staticMesh = new StaticMesh();
+	s_pSphereNode->m_staticMesh->InitFromFile("Resource/Models/Planet/Planet.obj");
+	s_pSphereNode->m_staticMesh->m_material.Init("Resource/test.vsb", "Resource/test.fsb");
+	s_pSphereNode->m_staticMesh->m_material.SetTexture(2, pTexture->imageView, sampler);
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)

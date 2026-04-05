@@ -68,7 +68,7 @@ static void InitUberPipelineLayout() {
 	descriptorSetLayoutBindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	descriptorSetLayoutBindings[1].pImmutableSamplers = nullptr; // for texture
 
-	descriptorSetLayoutBindings[2].binding = 0;
+	descriptorSetLayoutBindings[2].binding = 2;
 	descriptorSetLayoutBindings[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	descriptorSetLayoutBindings[2].descriptorCount = 1; // ubo -> descriptor <- texture
 	descriptorSetLayoutBindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
