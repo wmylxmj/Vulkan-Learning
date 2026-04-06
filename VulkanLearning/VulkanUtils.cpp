@@ -70,7 +70,7 @@ static void InitUberPipelineLayout() {
 
 	descriptorSetLayoutBindings[2].binding = 2;
 	descriptorSetLayoutBindings[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorSetLayoutBindings[2].descriptorCount = 1; // ubo -> descriptor <- texture
+	descriptorSetLayoutBindings[2].descriptorCount = 2; // ubo -> descriptor <- texture
 	descriptorSetLayoutBindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	descriptorSetLayoutBindings[2].pImmutableSamplers = nullptr; // for texture
 

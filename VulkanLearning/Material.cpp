@@ -83,6 +83,26 @@ void Material::SetTexture(uint32_t dstBinding, VkImageView textureImageView, VkS
 	vkUpdateDescriptorSets(GetVulkanDevice(), 1, writeDescriptorSets, 0, nullptr);
 }
 
+void Material::SetTexture2D(uint32_t dstBinding, uint32_t dstArreyIndex, VkImageView textureImageView, VkSampler textureSampler)
+{
+	VkDescriptorImageInfo imageInfo = {};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = textureImageView;
+	imageInfo.sampler = textureSampler;
+
+	VkWriteDescriptorSet writeDescriptorSets[1] = {};
+
+	writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSets[0].descriptorCount = 1;
+	writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writeDescriptorSets[0].pImageInfo = &imageInfo;
+	writeDescriptorSets[0].dstArrayElement = dstArreyIndex;
+	writeDescriptorSets[0].dstBinding = dstBinding;
+	writeDescriptorSets[0].dstSet = m_descriptorSet;
+
+	vkUpdateDescriptorSets(GetVulkanDevice(), 1, writeDescriptorSets, 0, nullptr);
+}
+
 void Material::Activate(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
 {
 	if (m_pipeline == nullptr) {

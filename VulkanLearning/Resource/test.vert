@@ -26,9 +26,13 @@ layout (binding = 1) uniform ub1 {
 
 layout (location = 0) out vec4 v_texcoord;
 layout (location = 1) out vec4 v_normalWorldSpace;
+layout (location = 2) flat out uint v_instanceID;
 
 void main() {
     uint instanceID = gl_InstanceIndex;
+    	v_instanceID = instanceID;
+
+
 
 	v_normalWorldSpace = ub0_normalMatrix * normal;
 	v_texcoord = texcoord;
