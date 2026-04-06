@@ -59,7 +59,7 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	);
 
 	VkSampler sampler = GenSampler();
-
+	//
 	s_pSphereNode = new SceneNode();
 	s_pSphereNode->m_staticMesh = new StaticMesh();
 	s_pSphereNode->m_staticMesh->InitFromFile("Resource/Models/Planet/Planet.obj");
