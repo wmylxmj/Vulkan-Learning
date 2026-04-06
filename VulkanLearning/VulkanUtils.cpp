@@ -916,3 +916,87 @@ void SubmitBufferDataToImage(
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bufferImageCopy
 	);
 }
+
+void SubmitTextureData(
+	VkImage inTargetImage, const void* inPixelData,
+	uint32_t inImageWidth, uint32_t inImageHeight, uint32_t inImageSizeInBytes
+)
+{
+	VkCommandBuffer commandBuffer = CreateCommandBuffer();
+	BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+	// 资源状态转换 -> 转换为传输目标状态
+	TransferImageLayout(
+		commandBuffer, inTargetImage,
+		VK_IMAGE_LAYOUT_UNDEFINED, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+	);
+	// 创建上传堆
+	Buffer* pUploadBuffer = GenBufferObject(
+		inImageSizeInBytes,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+	);
+
+	// 将数据拷贝到上传堆
+	void* pMemoryData = nullptr;
+	vkMapMemory(s_vulkanDevice, pUploadBuffer->memory, 0, inImageSizeInBytes, 0, &pMemoryData);
+	memcpy(pMemoryData, inPixelData, inImageSizeInBytes);
+	vkUnmapMemory(s_vulkanDevice, pUploadBuffer->memory);
+
+	// 将上传堆数据拷贝到显存
+	SubmitBufferDataToImage(
+		commandBuffer,
+		pUploadBuffer->buffer, inTargetImage,
+		inImageWidth, inImageHeight
+	);
+
+	// 资源状态转换 -> 转换为采样状态
+	TransferImageLayout(
+		commandBuffer, inTargetImage,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+	);
+
+	vkEndCommandBuffer(commandBuffer);
+
+	VkFence fence;
+	VkFenceCreateInfo fenceCreateInfo = {};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	vkCreateFence(s_vulkanDevice, &fenceCreateInfo, nullptr, &fence);
+	vkResetFences(s_vulkanDevice, 1, &fence);
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+	vkQueueSubmit(GetGraphicsQueue(), 1, &submitInfo, fence);
+	VkResult result = vkWaitForFences(s_vulkanDevice, 1, &fence, true, UINT64_MAX);
+	if (result == VK_SUCCESS)
+	{
+		OutputDebugStringA("Upload image to texture success.\n");
+	}
+	vkDestroyBuffer(s_vulkanDevice, pUploadBuffer->buffer, nullptr);
+	vkFreeMemory(s_vulkanDevice, pUploadBuffer->memory, nullptr);
+	vkDestroyFence(s_vulkanDevice, fence, nullptr);
+	vkFreeCommandBuffers(s_vulkanDevice, s_vulkanCommandPool, 1, &commandBuffer);
+}
+
+VkSampler GenSampler(
+	VkFilter inMinFilter, VkFilter inMagFilter,
+	VkSamplerAddressMode inWrapModeU, VkSamplerAddressMode inWrapModeV, VkSamplerAddressMode inWrapModeW
+)
+{
+	VkSampler sampler = nullptr;
+	VkSamplerCreateInfo samplerCreateInfo = {};
+	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerCreateInfo.minFilter = inMinFilter;
+	samplerCreateInfo.magFilter = inMagFilter;
+	samplerCreateInfo.anisotropyEnable = false;
+	samplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerCreateInfo.addressModeU = inWrapModeU;
+	samplerCreateInfo.addressModeV = inWrapModeV;
+	samplerCreateInfo.addressModeW = inWrapModeW;
+	vkCreateSampler(s_vulkanDevice, &samplerCreateInfo, nullptr, &sampler);
+	return sampler;
+}

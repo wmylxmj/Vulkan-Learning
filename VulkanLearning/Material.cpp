@@ -14,15 +14,17 @@ void Material::Init(const char* vertexShaderPath, const char* fragmentShaderPath
 
 	ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();
 
-	VkDescriptorPoolSize descriptorPoolSize = {};
-	descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorPoolSize.descriptorCount = 32; // descriptor -> ubo, texture, sampler
+	VkDescriptorPoolSize descriptorPoolSize[2] = {};
+	descriptorPoolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorPoolSize[0].descriptorCount = 32; // descriptor -> ubo, texture, sampler
+	descriptorPoolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorPoolSize[1].descriptorCount = 32;
 
 	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
 	descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	descriptorPoolCreateInfo.maxSets = 1;
-	descriptorPoolCreateInfo.poolSizeCount = 1;
-	descriptorPoolCreateInfo.pPoolSizes = &descriptorPoolSize;
+	descriptorPoolCreateInfo.poolSizeCount = sizeof(descriptorPoolSize) / sizeof(descriptorPoolSize[0]);
+	descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSize;
 
 	vkCreateDescriptorPool(GetVulkanDevice(), &descriptorPoolCreateInfo, nullptr, &m_descriptorPool);
 

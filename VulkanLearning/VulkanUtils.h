@@ -97,3 +97,16 @@ void SubmitBufferDataToImage(
 	VkBuffer inBuffer, VkImage inImage,
 	uint32_t inImageWidth, uint32_t inImageHeight
 );
+
+void SubmitTextureData(
+	VkImage inTargetImage, const void* inPixelData,
+	uint32_t inImageWidth, uint32_t inImageHeight, uint32_t inImageSizeInBytes
+);
+
+VkSampler GenSampler(
+	VkFilter inMinFilter = VK_FILTER_LINEAR,
+	VkFilter inMagFilter = VK_FILTER_LINEAR,
+	VkSamplerAddressMode inWrapModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+	VkSamplerAddressMode inWrapModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+	VkSamplerAddressMode inWrapModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+);
