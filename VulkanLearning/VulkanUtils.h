@@ -30,6 +30,19 @@ struct Texture
 	VkFormat format;
 };
 
+struct Texture2D : public Texture
+{
+	Texture2D() : Texture() {
+		width = 0;
+		height = 0;
+		numChannels = 0;
+	}
+
+	uint32_t width;
+	uint32_t height;
+	uint32_t numChannels;
+};
+
 struct Buffer {
 	Buffer();
 	~Buffer();
@@ -110,3 +123,5 @@ VkSampler GenSampler(
 	VkSamplerAddressMode inWrapModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
 	VkSamplerAddressMode inWrapModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
 );
+
+Texture2D* LoadTexture2DFromFile(const char* inFilePath);

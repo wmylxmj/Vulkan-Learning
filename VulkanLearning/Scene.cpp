@@ -8,8 +8,10 @@
 #include <cstdio>
 #include <string>
 #include <thread>
+#ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
+#endif
 
 SceneNode* s_pSphereNode = nullptr;
 
@@ -28,68 +30,8 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	StaticMesh::Initialize();
 	VkDevice vulkanDevice = GetVulkanDevice();
 
-	stbi_set_flip_vertically_on_load(true);
-	Texture* pTexture = new Texture[2];
-
-	{
-		int imageWidth = 0;
-		int imageHeight = 0;
-		int imageChannels = 0;
-		void* pixelData = stbi_load(
-			"Resource/Models/Planet/Texture/Planet_Diffuse.png",
-			&imageWidth, &imageHeight, &imageChannels, 4
-		);
-		int imageSize = imageWidth * imageHeight * 4;
-
-		pTexture[0].format = VK_FORMAT_R8G8B8A8_UNORM;
-		pTexture[0].aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-		GenImage(
-			&pTexture[0],
-			imageWidth,
-			imageHeight,
-			pTexture->format,
-			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-		);
-
-		SubmitTextureData(pTexture[0].image, pixelData, imageWidth, imageHeight, imageSize);
-
-		pTexture[0].imageView = GenImageView2D(
-			pTexture[0].image,
-			pTexture[0].format,
-			pTexture[0].aspectFlags
-		);
-	}
-
-	{
-		int imageWidth = 0;
-		int imageHeight = 0;
-		int imageChannels = 0;
-		void* pixelData = stbi_load(
-			"Resource/Models/Planet/Texture/Planet_Diffuse2.png",
-			&imageWidth, &imageHeight, &imageChannels, 4
-		);
-		int imageSize = imageWidth * imageHeight * 4;
-
-		pTexture[1].format = VK_FORMAT_R8G8B8A8_UNORM;
-		pTexture[1].aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-		GenImage(
-			&pTexture[1],
-			imageWidth,
-			imageHeight,
-			pTexture->format,
-			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-		);
-
-		SubmitTextureData(pTexture[1].image, pixelData, imageWidth, imageHeight, imageSize);
-
-		pTexture[1].imageView = GenImageView2D(
-			pTexture[1].image,
-			pTexture[1].format,
-			pTexture[1].aspectFlags
-		);
-	}
+	Texture2D* pTexture1 = LoadTexture2DFromFile("Resource/Models/Planet/Texture/Planet_Diffuse.png");
+	Texture2D* pTexture2 = LoadTexture2DFromFile("Resource/Models/Planet/Texture/Planet_Diffuse2.png");
 
 	VkSampler sampler = GenSampler();
 	//
@@ -97,8 +39,8 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	s_pSphereNode->m_staticMesh = new StaticMesh();
 	s_pSphereNode->m_staticMesh->InitFromFile("Resource/Models/Planet/Planet.obj");
 	s_pSphereNode->m_staticMesh->m_material.Init("Resource/test.vsb", "Resource/test.fsb");
-	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(2, 0, pTexture[0].imageView, sampler);
-	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(2, 1, pTexture[1].imageView, sampler);
+	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(2, 0, pTexture1->imageView, sampler);
+	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(2, 1, pTexture2->imageView, sampler);
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
