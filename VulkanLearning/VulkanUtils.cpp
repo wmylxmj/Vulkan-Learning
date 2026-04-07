@@ -1041,3 +1041,67 @@ Texture2D* LoadTexture2DFromFile(const char* inFilePath)
 
 	return pTexture;
 }
+
+void GenImageCubeMap(
+	Texture* inOutTexture,
+	uint32_t inWidth,
+	uint32_t inHeight,
+	VkFormat inFormat,
+	VkImageUsageFlags inUsageFlags,
+	VkMemoryPropertyFlagBits inMemoryPropertyFlagBits
+)
+{
+	VkImageCreateInfo imageCreateInfo = {};
+	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageCreateInfo.format = inFormat;
+	imageCreateInfo.extent.width = inWidth;
+	imageCreateInfo.extent.height = inHeight;
+	imageCreateInfo.extent.depth = 1;
+	imageCreateInfo.mipLevels = 1; // Mipmap Chain
+	imageCreateInfo.arrayLayers = 6; // Texture Array
+	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCreateInfo.usage = inUsageFlags;
+	imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+	vkCreateImage(s_vulkanDevice, &imageCreateInfo, nullptr, &inOutTexture->image);
+
+	VkMemoryRequirements memoryRequirements;
+	vkGetImageMemoryRequirements(s_vulkanDevice, inOutTexture->image, &memoryRequirements);
+	VkMemoryAllocateInfo memoryAllocateInfo = {};
+	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	memoryAllocateInfo.allocationSize = memoryRequirements.size;
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	vkGetPhysicalDeviceMemoryProperties(s_vulkanPhysicalDevice, &memoryProperties);
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i)
+	{
+		if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
+			(memoryProperties.memoryTypes[i].propertyFlags & inMemoryPropertyFlagBits)) // от╢Ф
+		{
+			memoryAllocateInfo.memoryTypeIndex = i;
+			break;
+		}
+	}
+	vkAllocateMemory(s_vulkanDevice, &memoryAllocateInfo, nullptr, &inOutTexture->memory);
+	vkBindImageMemory(s_vulkanDevice, inOutTexture->image, inOutTexture->memory, 0);
+}
+
+VkImageView GenImageViewCubeMap(VkImage inImage, VkFormat inFormat, VkImageAspectFlags inAspectFlags)
+{
+	VkImageViewCreateInfo imageViewCreateInfo = {};
+	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+	imageViewCreateInfo.image = inImage;
+	imageViewCreateInfo.format = inFormat;
+	imageViewCreateInfo.subresourceRange.aspectMask = inAspectFlags;
+	imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+	imageViewCreateInfo.subresourceRange.levelCount = 1;
+	imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+	imageViewCreateInfo.subresourceRange.layerCount = 6;
+
+	VkImageView imageView;
+	vkCreateImageView(s_vulkanDevice, &imageViewCreateInfo, nullptr, &imageView);
+	return imageView;
+}

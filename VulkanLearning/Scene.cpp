@@ -33,6 +33,24 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	Texture2D* pTexture1 = LoadTexture2DFromFile("Resource/Models/Planet/Texture/Planet_Diffuse.png");
 	Texture2D* pTexture2 = LoadTexture2DFromFile("Resource/Models/Planet/Texture/Planet_Diffuse2.png");
 
+	Texture2D* pTexture = new Texture2D[1];
+	pTexture->format = VK_FORMAT_R8G8B8A8_UNORM;
+	pTexture->aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+	GenImageCubeMap(
+		pTexture,
+		512,
+		512,
+		pTexture->format,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+	);
+
+	pTexture->imageView = GenImageViewCubeMap(
+		pTexture->image,
+		pTexture->format,
+		pTexture->aspectFlags
+	);
+
 	VkSampler sampler = GenSampler();
 	//
 	s_pSphereNode = new SceneNode();

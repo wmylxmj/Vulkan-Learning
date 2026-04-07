@@ -125,3 +125,14 @@ VkSampler GenSampler(
 );
 
 Texture2D* LoadTexture2DFromFile(const char* inFilePath);
+
+void GenImageCubeMap(
+	Texture* inOutTexture,
+	uint32_t inWidth,
+	uint32_t inHeight,
+	VkFormat inFormat,
+	VkImageUsageFlags inUsageFlags,
+	VkMemoryPropertyFlagBits inMemoryPropertyFlagBits
+);
+
+VkImageView GenImageViewCubeMap(VkImage inImage, VkFormat inFormat, VkImageAspectFlags inAspectFlags);
