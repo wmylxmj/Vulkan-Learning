@@ -100,7 +100,7 @@ void GenImage(
 VkImageView GenImageView2D(VkImage inImage, VkFormat inFormat, VkImageAspectFlags inAspectFlags);
 
 void TransferImageLayout(
-	VkCommandBuffer inCommandBuffer, VkImage inImage,
+	VkCommandBuffer inCommandBuffer, VkImage inImage, VkImageSubresourceRange inSubresourceRange,
 	VkImageLayout inOldLayout, VkAccessFlags inOldAccessFlags, VkPipelineStageFlags inOldPipelineStage,
 	VkImageLayout inNewLayout, VkAccessFlags inNewAccessFlags, VkPipelineStageFlags inNewPipelineStage
 );
@@ -108,7 +108,8 @@ void TransferImageLayout(
 void SubmitBufferDataToImage(
 	VkCommandBuffer inCommandBuffer,
 	VkBuffer inBuffer, VkImage inImage,
-	uint32_t inImageWidth, uint32_t inImageHeight
+	uint32_t inImageWidth, uint32_t inImageHeight,
+	uint32_t inFaceIndex
 );
 
 void SubmitTextureData(
@@ -136,3 +137,8 @@ void GenImageCubeMap(
 );
 
 VkImageView GenImageViewCubeMap(VkImage inImage, VkFormat inFormat, VkImageAspectFlags inAspectFlags);
+
+void SubmitCubeMapData(
+	VkImage inTargetImage, void** inPixelData,
+	uint32_t inImageWidth, uint32_t inImageHeight, uint32_t inImageSizeInBytes
+);

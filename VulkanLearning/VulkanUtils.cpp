@@ -871,7 +871,7 @@ VkFramebuffer* GetSwapChainFrameBuffers()
 }
 
 void TransferImageLayout(
-	VkCommandBuffer inCommandBuffer, VkImage inImage,
+	VkCommandBuffer inCommandBuffer, VkImage inImage, VkImageSubresourceRange inSubresourceRange,
 	VkImageLayout inOldLayout, VkAccessFlags inOldAccessFlags, VkPipelineStageFlags inOldPipelineStage,
 	VkImageLayout inNewLayout, VkAccessFlags inNewAccessFlags, VkPipelineStageFlags inNewPipelineStage
 )
@@ -885,11 +885,7 @@ void TransferImageLayout(
 	imageMemoryBarrier.srcAccessMask = inOldAccessFlags;
 	imageMemoryBarrier.dstAccessMask = inNewAccessFlags;
 	imageMemoryBarrier.image = inImage;
-	imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-	imageMemoryBarrier.subresourceRange.levelCount = 1;
-	imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-	imageMemoryBarrier.subresourceRange.layerCount = 1;
+	imageMemoryBarrier.subresourceRange = inSubresourceRange;
 	vkCmdPipelineBarrier(
 		inCommandBuffer,
 		inOldPipelineStage,
@@ -901,12 +897,13 @@ void TransferImageLayout(
 void SubmitBufferDataToImage(
 	VkCommandBuffer inCommandBuffer,
 	VkBuffer inBuffer, VkImage inImage,
-	uint32_t inImageWidth, uint32_t inImageHeight
+	uint32_t inImageWidth, uint32_t inImageHeight,
+	uint32_t inFaceIndex
 )
 {
 	VkBufferImageCopy bufferImageCopy = {};
 	bufferImageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	bufferImageCopy.imageSubresource.baseArrayLayer = 0;
+	bufferImageCopy.imageSubresource.baseArrayLayer = inFaceIndex;
 	bufferImageCopy.imageSubresource.layerCount = 1;
 	bufferImageCopy.imageSubresource.mipLevel = 0;
 
@@ -928,11 +925,19 @@ void SubmitTextureData(
 	BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	// 资源状态转换 -> 转换为传输目标状态
+	VkImageSubresourceRange imageSubresourceRange = {};
+	imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageSubresourceRange.baseMipLevel = 0;
+	imageSubresourceRange.levelCount = 1;
+	imageSubresourceRange.baseArrayLayer = 0;
+	imageSubresourceRange.layerCount = 1;
+
 	TransferImageLayout(
-		commandBuffer, inTargetImage,
+		commandBuffer, inTargetImage, imageSubresourceRange,
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
 	);
+
 	// 创建上传堆
 	Buffer* pUploadBuffer = GenBufferObject(
 		inImageSizeInBytes,
@@ -950,12 +955,13 @@ void SubmitTextureData(
 	SubmitBufferDataToImage(
 		commandBuffer,
 		pUploadBuffer->buffer, inTargetImage,
-		inImageWidth, inImageHeight
+		inImageWidth, inImageHeight,
+		0
 	);
 
 	// 资源状态转换 -> 转换为采样状态
 	TransferImageLayout(
-		commandBuffer, inTargetImage,
+		commandBuffer, inTargetImage, imageSubresourceRange,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
 	);
@@ -1005,7 +1011,6 @@ VkSampler GenSampler(
 
 Texture2D* LoadTexture2DFromFile(const char* inFilePath)
 {
-	stbi_set_flip_vertically_on_load(true);
 	int imageWidth = 0;
 	int imageHeight = 0;
 	int imageChannels = 0;
@@ -1104,4 +1109,79 @@ VkImageView GenImageViewCubeMap(VkImage inImage, VkFormat inFormat, VkImageAspec
 	VkImageView imageView;
 	vkCreateImageView(s_vulkanDevice, &imageViewCreateInfo, nullptr, &imageView);
 	return imageView;
+}
+
+void SubmitCubeMapData(
+	VkImage inTargetImage, void** inPixelData,
+	uint32_t inImageWidth, uint32_t inImageHeight, uint32_t inImageSizeInBytes
+)
+{
+	VkCommandBuffer commandBuffer = CreateCommandBuffer();
+	BeginCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+	// 创建上传堆
+	Buffer* pUploadBuffer[6];
+	for (int i = 0; i < 6; ++i) {
+		// 资源状态转换 -> 转换为传输目标状态
+		VkImageSubresourceRange imageSubresourceRange = {};
+		imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageSubresourceRange.baseMipLevel = 0;
+		imageSubresourceRange.levelCount = 1;
+		imageSubresourceRange.baseArrayLayer = i;
+		imageSubresourceRange.layerCount = 1;
+
+		TransferImageLayout(
+			commandBuffer, inTargetImage, imageSubresourceRange,
+			VK_IMAGE_LAYOUT_UNDEFINED, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		);
+
+		pUploadBuffer[i] = GenBufferObject(
+			inImageSizeInBytes,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+			inImageSizeInBytes,
+			inPixelData[i]
+		);
+
+		// 将上传堆数据拷贝到显存
+		SubmitBufferDataToImage(
+			commandBuffer,
+			pUploadBuffer[i]->buffer, inTargetImage,
+			inImageWidth, inImageHeight,
+			i
+		);
+
+		// 资源状态转换 -> 转换为采样状态
+		TransferImageLayout(
+			commandBuffer, inTargetImage, imageSubresourceRange,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		);
+	}
+
+	vkEndCommandBuffer(commandBuffer);
+
+	VkFence fence;
+	VkFenceCreateInfo fenceCreateInfo = {};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	vkCreateFence(s_vulkanDevice, &fenceCreateInfo, nullptr, &fence);
+	vkResetFences(s_vulkanDevice, 1, &fence);
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+	vkQueueSubmit(GetGraphicsQueue(), 1, &submitInfo, fence);
+	VkResult result = vkWaitForFences(s_vulkanDevice, 1, &fence, true, UINT64_MAX);
+	if (result == VK_SUCCESS)
+	{
+		OutputDebugStringA("Upload image to texture success.\n");
+	}
+	for (int i = 0; i < 6; ++i) {
+		vkDestroyBuffer(s_vulkanDevice, pUploadBuffer[i]->buffer, nullptr);
+		vkFreeMemory(s_vulkanDevice, pUploadBuffer[i]->memory, nullptr);
+	}
+	vkDestroyFence(s_vulkanDevice, fence, nullptr);
+	vkFreeCommandBuffers(s_vulkanDevice, s_vulkanCommandPool, 1, &commandBuffer);
 }
