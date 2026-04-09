@@ -26,17 +26,14 @@ layout (binding = 1) uniform ub1 {
 
 layout (location = 0) out vec4 v_texcoord;
 layout (location = 1) out vec4 v_normalWorldSpace;
-layout (location = 2) flat out uint v_instanceID;
+layout (location = 2) out vec4 v_positionWorldSpace;
 
 void main() {
     uint instanceID = gl_InstanceIndex;
-    	v_instanceID = instanceID;
-
-
-
 	v_normalWorldSpace = ub0_normalMatrix * normal;
 	v_texcoord = texcoord;
 	vec4 offset = ub1_offsets[instanceID];
 	vec4 positionMS = vec4(position.xyz + offset.xyz, 1.0);
-	gl_Position = projectionMatrix * viewMatrix * ub0_modelMatrix * positionMS;
+    v_positionWorldSpace = ub0_modelMatrix * positionMS;
+	gl_Position = projectionMatrix * viewMatrix * v_positionWorldSpace;
 }

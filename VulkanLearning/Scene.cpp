@@ -20,10 +20,8 @@ glm::mat4 s_projectionMatrix;
 
 void InitScene(int inCanvasWidth, int inCanvasHeight)
 {
-	stbi_set_flip_vertically_on_load(true);
-
 	s_viewMatrix = glm::lookAt(
-		glm::vec3(200.0f, 200.0f, 200.0f),
+		glm::vec3(200.0f, -200.0f, 300.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f)
 	);
@@ -32,8 +30,9 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	StaticMesh::Initialize();
 	VkDevice vulkanDevice = GetVulkanDevice();
 
-	Texture2D* pTexture1 = LoadTexture2DFromFile("Resource/Models/Planet/Texture/Planet_Diffuse.png");
-	Texture2D* pTexture2 = LoadTexture2DFromFile("Resource/Models/Planet/Texture/Planet_Diffuse2.png");
+	stbi_set_flip_vertically_on_load(true);
+	Texture2D* pDiffuseTexture = LoadTexture2DFromFile("Resource/Models/Planet/Texture/Planet_Diffuse.png");
+	stbi_set_flip_vertically_on_load(false);
 
 	const char* imagePaths[] = {
 		"Resource/skybox/right.jpg",
@@ -55,24 +54,24 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	}
 	int imageSize = imageWidth * imageHeight * 4;
 
-	Texture2D* pTexture = new Texture2D[1];
-	pTexture->format = VK_FORMAT_R8G8B8A8_UNORM;
-	pTexture->aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+	Texture2D* pCubeMapTexture = new Texture2D[1];
+	pCubeMapTexture->format = VK_FORMAT_R8G8B8A8_UNORM;
+	pCubeMapTexture->aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 	GenImageCubeMap(
-		pTexture,
+		pCubeMapTexture,
 		imageWidth,
 		imageHeight,
-		pTexture->format,
+		pCubeMapTexture->format,
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	);
 
-	SubmitCubeMapData(pTexture->image, imageDatas, imageWidth, imageHeight, imageSize);
+	SubmitCubeMapData(pCubeMapTexture->image, imageDatas, imageWidth, imageHeight, imageSize);
 
-	pTexture->imageView = GenImageViewCubeMap(
-		pTexture->image,
-		pTexture->format,
-		pTexture->aspectFlags
+	pCubeMapTexture->imageView = GenImageViewCubeMap(
+		pCubeMapTexture->image,
+		pCubeMapTexture->format,
+		pCubeMapTexture->aspectFlags
 	);
 
 	VkSampler sampler = GenSampler();
@@ -81,8 +80,8 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	s_pSphereNode->m_staticMesh = new StaticMesh();
 	s_pSphereNode->m_staticMesh->InitFromFile("Resource/Models/Planet/Planet.obj");
 	s_pSphereNode->m_staticMesh->m_material.Init("Resource/test.vsb", "Resource/test.fsb");
-	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(2, 0, pTexture1->imageView, sampler);
-	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(2, 1, pTexture2->imageView, sampler);
+	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(2, 0, pDiffuseTexture->imageView, sampler);
+	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(3, 0, pCubeMapTexture->imageView, sampler);
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)

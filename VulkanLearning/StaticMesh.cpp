@@ -85,7 +85,7 @@ void StaticMesh::InitFromFile(const char* inFilePath)
 	Assimp::Importer importer;
 	constexpr unsigned int flags = aiProcess_Triangulate |
 		aiProcess_JoinIdenticalVertices |
-		aiProcess_GenNormals |
+		aiProcess_GenSmoothNormals |
 		aiProcess_CalcTangentSpace;
 	const aiScene* pScene = importer.ReadFile(inFilePath, flags);
 	if (pScene == nullptr) {

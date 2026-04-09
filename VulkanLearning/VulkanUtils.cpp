@@ -57,7 +57,7 @@ Buffer::~Buffer() {
 }
 
 static void InitUberPipelineLayout() {
-	VkDescriptorSetLayoutBinding descriptorSetLayoutBindings[3] = {};
+	VkDescriptorSetLayoutBinding descriptorSetLayoutBindings[4] = {};
 	descriptorSetLayoutBindings[0].binding = 0;
 	descriptorSetLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorSetLayoutBindings[0].descriptorCount = 1; // ubo -> descriptor <- texture
@@ -72,9 +72,15 @@ static void InitUberPipelineLayout() {
 
 	descriptorSetLayoutBindings[2].binding = 2;
 	descriptorSetLayoutBindings[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorSetLayoutBindings[2].descriptorCount = 2; // ubo -> descriptor <- texture
+	descriptorSetLayoutBindings[2].descriptorCount = 1; // ubo -> descriptor <- texture
 	descriptorSetLayoutBindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	descriptorSetLayoutBindings[2].pImmutableSamplers = nullptr; // for texture
+
+	descriptorSetLayoutBindings[3].binding = 3;
+	descriptorSetLayoutBindings[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorSetLayoutBindings[3].descriptorCount = 1; // ubo -> descriptor <- texture
+	descriptorSetLayoutBindings[3].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	descriptorSetLayoutBindings[3].pImmutableSamplers = nullptr; // for texture
 
 	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
 	descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
