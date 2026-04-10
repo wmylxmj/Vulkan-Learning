@@ -59,5 +59,8 @@
     <None Include="Resource\test.frag" />
     <None Include="Resource\test.fsb" />
     <None Include="Resource\test.vsb" />
+    <None Include="Resource\gstest.vert" />
+    <None Include="Resource\gstest.geom" />
+    <None Include="Resource\gstest.frag" />
   </ItemGroup>
 </Project>
