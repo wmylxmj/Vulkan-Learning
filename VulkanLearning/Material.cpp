@@ -143,11 +143,10 @@ void Material::SetTexture2D(uint32_t dstBinding, uint32_t dstArreyIndex, VkImage
 void Material::Activate(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
 {
 	if (m_pipeline == nullptr) {
-		m_pipeline = CreateVGFPipeline(
+		m_pipeline = CreatePipeline(
 			StaticMesh::sm_vertexInputBindingDescriptions,
 			StaticMesh::sm_vertexInputAttributeDescriptions,
 			m_vertexShaderModule,
-			m_geometryShaderModule,
 			m_fragmentShaderModule
 		);
 	}

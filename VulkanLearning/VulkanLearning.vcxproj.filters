@@ -62,5 +62,8 @@
     <None Include="Resource\gstest.vert" />
     <None Include="Resource\gstest.geom" />
     <None Include="Resource\gstest.frag" />
+    <None Include="Resource\tstest.vert" />
+    <None Include="Resource\tstest.frag" />
+    <None Include="Resource\tstest.tesc" />
   </ItemGroup>
 </Project>

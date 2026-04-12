@@ -334,6 +334,8 @@ static bool InitVulkanLogicalDevice()
 	VkPhysicalDeviceFeatures physicalDeviceFeatures = {};
 	physicalDeviceFeatures.geometryShader = VK_TRUE;
 	physicalDeviceFeatures.tessellationShader = VK_TRUE;
+	physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;
+	physicalDeviceFeatures.wideLines = VK_TRUE;
 	deviceCreateInfo.pEnabledFeatures = &physicalDeviceFeatures;
 
 	if (vkCreateDevice(s_vulkanPhysicalDevice, &deviceCreateInfo, nullptr, &s_vulkanDevice) != VK_SUCCESS)
@@ -776,8 +778,8 @@ VkPipeline CreatePipeline(
 	rasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
 	rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
-	rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizationStateCreateInfo.lineWidth = 1.0f;
+	rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_LINE;
+	rasterizationStateCreateInfo.lineWidth = 2.0f;
 	rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
 	rasterizationStateCreateInfo.depthBiasSlopeFactor = 0.0f;

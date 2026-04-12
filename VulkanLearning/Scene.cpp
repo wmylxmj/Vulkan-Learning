@@ -94,10 +94,9 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		s_pSphereNode->m_staticMesh->m_vertexData
 	);
 
-	s_pSphereNode->m_staticMesh->m_material.InitVGF(
-		"Resource/gstest.vsb",
-		"Resource/gstest.gsb",
-		"Resource/gstest.fsb"
+	s_pSphereNode->m_staticMesh->m_material.Init(
+		"Resource/tstest.vsb",
+		"Resource/tstest.fsb"
 	);
 	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(2, 0, pDiffuseTexture->imageView, sampler);
 	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(3, 0, pCubeMapTexture->imageView, sampler);
