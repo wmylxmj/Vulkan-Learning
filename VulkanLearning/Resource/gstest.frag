@@ -11,10 +11,13 @@ layout(binding = 2) uniform sampler2D u_texture;
 layout (binding = 3) uniform samplerCube u_cubeMap;
 
 void main() {
+	/*
 	vec3 N = normalize(v_normalWorldSpace.xyz);
 	vec3 V = normalize(v_positionWorldSpace.xyz - vec3(200.0, -200.0, 300.0));
 	vec3 R = normalize(reflect(V, N));
 	vec3 color = texture(u_cubeMap, R).rgb;
+	*/
+	vec3 color = normalize(v_normalWorldSpace.xyz) * 0.5 + 0.5;
 	FragColor = vec4(color, 1.0);
 }
 

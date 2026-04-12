@@ -21,7 +21,7 @@ glm::mat4 s_projectionMatrix;
 void InitScene(int inCanvasWidth, int inCanvasHeight)
 {
 	s_viewMatrix = glm::lookAt(
-		glm::vec3(200.0f, -200.0f, 300.0f),
+		glm::vec3(0.0f, 0.0f, 2.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f)
 	);
@@ -78,7 +78,22 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	//
 	s_pSphereNode = new SceneNode();
 	s_pSphereNode->m_staticMesh = new StaticMesh();
-	s_pSphereNode->m_staticMesh->InitFromFile("Resource/Models/Planet/Planet.obj");
+	//s_pSphereNode->m_staticMesh->InitFromFile("Resource/Models/Planet/Planet.obj");
+	s_pSphereNode->m_staticMesh->SetVertexCount(3);
+	s_pSphereNode->m_staticMesh->SetPosition(0, glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f));
+	s_pSphereNode->m_staticMesh->SetNormal(0, glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	s_pSphereNode->m_staticMesh->SetPosition(1, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+	s_pSphereNode->m_staticMesh->SetNormal(1, glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	s_pSphereNode->m_staticMesh->SetPosition(2, glm::vec4(0.0f, -0.5f, 0.0f, 1.0f));
+	s_pSphereNode->m_staticMesh->SetNormal(2, glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	s_pSphereNode->m_staticMesh->m_pVertexBuffer = GenBufferObject(
+		s_pSphereNode->m_staticMesh->m_vertexCount * sizeof(StaticMeshVertexData),
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		s_pSphereNode->m_staticMesh->m_vertexCount * sizeof(StaticMeshVertexData),
+		s_pSphereNode->m_staticMesh->m_vertexData
+	);
+
 	s_pSphereNode->m_staticMesh->m_material.InitVGF(
 		"Resource/gstest.vsb",
 		"Resource/gstest.gsb",
