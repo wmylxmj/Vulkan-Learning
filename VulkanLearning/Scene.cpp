@@ -79,7 +79,11 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	s_pSphereNode = new SceneNode();
 	s_pSphereNode->m_staticMesh = new StaticMesh();
 	s_pSphereNode->m_staticMesh->InitFromFile("Resource/Models/Planet/Planet.obj");
-	s_pSphereNode->m_staticMesh->m_material.Init("Resource/test.vsb", "Resource/test.fsb");
+	s_pSphereNode->m_staticMesh->m_material.InitVGF(
+		"Resource/gstest.vsb",
+		"Resource/gstest.gsb",
+		"Resource/gstest.fsb"
+	);
 	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(2, 0, pDiffuseTexture->imageView, sampler);
 	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(3, 0, pCubeMapTexture->imageView, sampler);
 }

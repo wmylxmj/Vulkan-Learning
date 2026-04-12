@@ -43,6 +43,43 @@ void Material::Init(const char* vertexShaderPath, const char* fragmentShaderPath
 	}
 }
 
+void Material::InitVGF(const char* vertexShaderPath, const char* geometryShaderPath, const char* fragmentShaderPath)
+{
+	m_vertexShaderModule = CompileShader(vertexShaderPath);
+	m_geometryShaderModule = CompileShader(geometryShaderPath);
+	m_fragmentShaderModule = CompileShader(fragmentShaderPath);
+
+	ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();
+
+	VkDescriptorPoolSize descriptorPoolSize[2] = {};
+	descriptorPoolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorPoolSize[0].descriptorCount = 32; // descriptor -> ubo, texture, sampler
+	descriptorPoolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorPoolSize[1].descriptorCount = 32;
+
+	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
+	descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	descriptorPoolCreateInfo.maxSets = 1;
+	descriptorPoolCreateInfo.poolSizeCount = sizeof(descriptorPoolSize) / sizeof(descriptorPoolSize[0]);
+	descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSize;
+
+	vkCreateDescriptorPool(GetVulkanDevice(), &descriptorPoolCreateInfo, nullptr, &m_descriptorPool);
+
+	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
+	descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	descriptorSetAllocateInfo.descriptorPool = m_descriptorPool;
+	descriptorSetAllocateInfo.descriptorSetCount = 1;
+	descriptorSetAllocateInfo.pSetLayouts = &pShaderParameterDescription->descriptorSetLayout;
+	if (vkAllocateDescriptorSets(
+		GetVulkanDevice(),
+		&descriptorSetAllocateInfo,
+		&m_descriptorSet
+	) != VK_SUCCESS)
+	{
+		OutputDebugStringA("Failed to allocate descriptor sets!");
+	}
+}
+
 void Material::SetUniformBuffer(uint32_t dstBinding, VkBuffer uniformBuffer, uint32_t uniformBufferSize)
 {
 	VkDescriptorBufferInfo bufferInfo = {};
@@ -106,10 +143,11 @@ void Material::SetTexture2D(uint32_t dstBinding, uint32_t dstArreyIndex, VkImage
 void Material::Activate(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
 {
 	if (m_pipeline == nullptr) {
-		m_pipeline = CreatePipeline(
+		m_pipeline = CreateVGFPipeline(
 			StaticMesh::sm_vertexInputBindingDescriptions,
 			StaticMesh::sm_vertexInputAttributeDescriptions,
 			m_vertexShaderModule,
+			m_geometryShaderModule,
 			m_fragmentShaderModule
 		);
 	}
