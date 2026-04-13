@@ -93,6 +93,15 @@ VkPipeline CreateVGFPipeline(
 	const VkShaderModule inFragmentShaderModule
 );
 
+VkPipeline CreateVTFPipeline(
+	const std::vector<VkVertexInputBindingDescription>& inVertexInputBindingDescriptions,
+	const std::vector<VkVertexInputAttributeDescription>& inVertexInputAttributeDescriptions,
+	const VkShaderModule inVertexShaderModule,
+	const VkShaderModule inTessellationControlShaderModule,
+	const VkShaderModule inTessellationEvaluationShaderModule,
+	const VkShaderModule inFragmentShaderModule
+);
+
 VkShaderModule CompileShader(const char* inFilePath);
 
 VkFramebuffer* GetSwapChainFrameBuffers();
