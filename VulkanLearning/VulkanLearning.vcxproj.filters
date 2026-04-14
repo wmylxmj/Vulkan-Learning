@@ -65,5 +65,6 @@
     <None Include="Resource\tstest.vert" />
     <None Include="Resource\tstest.frag" />
     <None Include="Resource\tstest.tesc" />
+    <None Include="Resource\tstest.tese" />
   </ItemGroup>
 </Project>

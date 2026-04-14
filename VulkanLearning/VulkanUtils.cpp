@@ -1059,7 +1059,7 @@ VkPipeline CreateVTFPipeline(
 	colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
 	colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
 
-	VkPipelineShaderStageCreateInfo shaderStages[3] = {};
+	VkPipelineShaderStageCreateInfo shaderStages[4] = {};
 	shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
 	shaderStages[0].module = inVertexShaderModule;
@@ -1069,9 +1069,13 @@ VkPipeline CreateVTFPipeline(
 	shaderStages[1].module = inTessellationControlShaderModule;
 	shaderStages[1].pName = "main";
 	shaderStages[2].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shaderStages[2].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	shaderStages[2].module = inFragmentShaderModule;
+	shaderStages[2].stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+	shaderStages[2].module = inTessellationEvaluationShaderModule;
 	shaderStages[2].pName = "main";
+	shaderStages[3].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	shaderStages[3].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	shaderStages[3].module = inFragmentShaderModule;
+	shaderStages[3].pName = "main";
 
 	VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = {};
 	tessellationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;

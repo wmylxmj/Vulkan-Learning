@@ -84,6 +84,7 @@ void Material::InitVTF(const char* vertexShaderPath, const char* tessellationCon
 {
 	m_vertexShaderModule = CompileShader(vertexShaderPath);
 	m_tessellationControlShaderModule = CompileShader(tessellationControlShaderPath);
+	m_tessellationEvaluationShaderModule = CompileShader(tessellationEvaluationShaderPath);
 	m_fragmentShaderModule = CompileShader(fragmentShaderPath);
 
 	ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();

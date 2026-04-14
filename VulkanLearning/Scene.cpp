@@ -97,7 +97,7 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	s_pSphereNode->m_staticMesh->m_material.InitVTF(
 		"Resource/tstest.vsb",
 		"Resource/tstest.tcsb",
-		nullptr,
+		"Resource/tstest.tesb",
 		"Resource/tstest.fsb"
 	);
 	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(2, 0, pDiffuseTexture->imageView, sampler);

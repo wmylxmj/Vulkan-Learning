@@ -162,6 +162,7 @@
     <None Include="Resource\test.vsb" />
     <None Include="Resource\tstest.frag" />
     <None Include="Resource\tstest.tesc" />
+    <None Include="Resource\tstest.tese" />
     <None Include="Resource\tstest.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
