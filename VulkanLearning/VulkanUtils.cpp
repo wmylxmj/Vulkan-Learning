@@ -785,7 +785,7 @@ VkPipeline CreatePipeline(
 	rasterizationStateCreateInfo.depthBiasSlopeFactor = 0.0f;
 	rasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
 	rasterizationStateCreateInfo.depthBiasClamp = 0.0f;
-	rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT; // ±³ÃæÌÞ³ý
 
 	VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo = {};
 	multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;

@@ -1,6 +1,6 @@
 #version 430
 
-layout(triangles, equal_spacing, cw) in;
+layout(triangles, equal_spacing, ccw) in;
 
 void main() {
     // ÖØÐÄ×ø±ê
