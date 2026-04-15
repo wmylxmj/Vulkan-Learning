@@ -79,13 +79,15 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 	s_pSphereNode = new SceneNode();
 	s_pSphereNode->m_staticMesh = new StaticMesh();
 	//s_pSphereNode->m_staticMesh->InitFromFile("Resource/Models/Planet/Planet.obj");
-	s_pSphereNode->m_staticMesh->SetVertexCount(3);
+	s_pSphereNode->m_staticMesh->SetVertexCount(4);
 	s_pSphereNode->m_staticMesh->SetPosition(0, glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f));
 	s_pSphereNode->m_staticMesh->SetNormal(0, glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
 	s_pSphereNode->m_staticMesh->SetPosition(1, glm::vec4(0.5f, -0.5f, 0.0f, 1.0f));
 	s_pSphereNode->m_staticMesh->SetNormal(1, glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
-	s_pSphereNode->m_staticMesh->SetPosition(2, glm::vec4(0.0f, 0.5f, 0.0f, 1.0f));
+	s_pSphereNode->m_staticMesh->SetPosition(2, glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f));
 	s_pSphereNode->m_staticMesh->SetNormal(2, glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	s_pSphereNode->m_staticMesh->SetPosition(3, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+	s_pSphereNode->m_staticMesh->SetNormal(3, glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
 	s_pSphereNode->m_staticMesh->m_pVertexBuffer = GenBufferObject(
 		s_pSphereNode->m_staticMesh->m_vertexCount * sizeof(StaticMeshVertexData),
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,

@@ -1079,7 +1079,7 @@ VkPipeline CreateVTFPipeline(
 
 	VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = {};
 	tessellationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-	tessellationStateCreateInfo.patchControlPoints = 3;
+	tessellationStateCreateInfo.patchControlPoints = 4;
 
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {};
 	graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;

@@ -1,6 +1,6 @@
 #version 430
 
-layout(triangles, equal_spacing, ccw) in;
+layout(quads, equal_spacing, ccw) in;
 
 void main() {
     // ÖØÐÄ×ø±ê
@@ -8,8 +8,13 @@ void main() {
     float v = gl_TessCoord.y;
     float w = gl_TessCoord.z;
 
-    vec3 a = gl_in[0].gl_Position.xyz;
-    vec3 b = gl_in[1].gl_Position.xyz;
-    vec3 c = gl_in[2].gl_Position.xyz;
-    gl_Position = vec4(a * u + b * v + c * w, 1.0);
+    vec3 lb = gl_in[0].gl_Position.xyz;
+    vec3 rb = gl_in[1].gl_Position.xyz;
+    vec3 lt = gl_in[2].gl_Position.xyz;
+    vec3 rt = gl_in[3].gl_Position.xyz;
+
+    vec3 lrt = mix(lt, rt, u);
+    vec3 lrb = mix(lb, rb, u);
+    vec3 p = mix(lrb, lrt, v);
+    gl_Position = vec4(p, 1.0);
 }
