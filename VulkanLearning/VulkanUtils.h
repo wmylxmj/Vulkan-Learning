@@ -143,6 +143,7 @@ VkSampler GenSampler(
 );
 
 Texture2D* LoadTexture2DFromFile(const char* inFilePath);
+Texture2D* LoadTextureCubeMapFromFile(const char** inFilePaths);
 
 void GenImageCubeMap(
 	Texture* inOutTexture,

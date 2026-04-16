@@ -1314,6 +1314,43 @@ Texture2D* LoadTexture2DFromFile(const char* inFilePath)
 	return pTexture;
 }
 
+Texture2D* LoadTextureCubeMapFromFile(const char** inFilePaths)
+{
+	void* imageDatas[6] = { nullptr };
+	int imageWidth = 0;
+	int imageHeight = 0;
+	int imageChannels = 0;
+	for (int i = 0; i < 6; ++i) {
+		imageDatas[i] = stbi_load(
+			inFilePaths[i],
+			&imageWidth, &imageHeight, &imageChannels, 4
+		);
+	}
+	int imageSize = imageWidth * imageHeight * 4;
+
+	Texture2D* pCubeMapTexture = new Texture2D[1];
+	pCubeMapTexture->format = VK_FORMAT_R8G8B8A8_UNORM;
+	pCubeMapTexture->aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+	GenImageCubeMap(
+		pCubeMapTexture,
+		imageWidth,
+		imageHeight,
+		pCubeMapTexture->format,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+	);
+
+	SubmitCubeMapData(pCubeMapTexture->image, imageDatas, imageWidth, imageHeight, imageSize);
+
+	pCubeMapTexture->imageView = GenImageViewCubeMap(
+		pCubeMapTexture->image,
+		pCubeMapTexture->format,
+		pCubeMapTexture->aspectFlags
+	);
+
+	return pCubeMapTexture;
+}
+
 void GenImageCubeMap(
 	Texture* inOutTexture,
 	uint32_t inWidth,

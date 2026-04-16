@@ -2,6 +2,7 @@
 #include "VulkanUtils.h"
 #include "StaticMesh.h"
 #include "SceneNode.h"
+#include "Framebuffer.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -14,9 +15,12 @@
 #endif
 
 SceneNode* s_pSphereNode = nullptr;
+Texture* s_pSkyboxTexture = nullptr;
 
 glm::mat4 s_viewMatrix;
 glm::mat4 s_projectionMatrix;
+
+FrameBuffer* s_pFrameBuffer = nullptr;
 
 void InitScene(int inCanvasWidth, int inCanvasHeight)
 {
@@ -32,7 +36,6 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 
 	stbi_set_flip_vertically_on_load(true);
 	Texture2D* pDiffuseTexture = LoadTexture2DFromFile("Resource/Models/Planet/Texture/Planet_Diffuse.png");
-	stbi_set_flip_vertically_on_load(false);
 
 	const char* imagePaths[] = {
 		"Resource/skybox/right.jpg",
@@ -42,37 +45,8 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		"Resource/skybox/front.jpg",
 		"Resource/skybox/back.jpg"
 	};
-	void* imageDatas[6] = { nullptr };
-	int imageWidth = 0;
-	int imageHeight = 0;
-	int imageChannels = 0;
-	for (int i = 0; i < 6; ++i) {
-		imageDatas[i] = stbi_load(
-			imagePaths[i],
-			&imageWidth, &imageHeight, &imageChannels, 4
-		);
-	}
-	int imageSize = imageWidth * imageHeight * 4;
-
-	Texture2D* pCubeMapTexture = new Texture2D[1];
-	pCubeMapTexture->format = VK_FORMAT_R8G8B8A8_UNORM;
-	pCubeMapTexture->aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-	GenImageCubeMap(
-		pCubeMapTexture,
-		imageWidth,
-		imageHeight,
-		pCubeMapTexture->format,
-		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-	);
-
-	SubmitCubeMapData(pCubeMapTexture->image, imageDatas, imageWidth, imageHeight, imageSize);
-
-	pCubeMapTexture->imageView = GenImageViewCubeMap(
-		pCubeMapTexture->image,
-		pCubeMapTexture->format,
-		pCubeMapTexture->aspectFlags
-	);
+	stbi_set_flip_vertically_on_load(false);
+	s_pSkyboxTexture = LoadTextureCubeMapFromFile(imagePaths);
 
 	VkSampler sampler = GenSampler();
 	//
@@ -103,7 +77,10 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		"Resource/tstest.fsb"
 	);
 	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(2, 0, pDiffuseTexture->imageView, sampler);
-	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(3, 0, pCubeMapTexture->imageView, sampler);
+	s_pSphereNode->m_staticMesh->m_material.SetTexture2D(3, 0, s_pSkyboxTexture->imageView, sampler);
+
+	s_pFrameBuffer = new FrameBuffer();
+	s_pFrameBuffer->InitWithSize(1280, 720);
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
