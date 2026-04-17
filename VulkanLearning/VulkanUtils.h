@@ -94,6 +94,7 @@ VkPipeline CreateVGFPipeline(
 );
 
 VkPipeline CreateVTFPipeline(
+	VkRenderPass inRenderPass,
 	const std::vector<VkVertexInputBindingDescription>& inVertexInputBindingDescriptions,
 	const std::vector<VkVertexInputAttributeDescription>& inVertexInputAttributeDescriptions,
 	const VkShaderModule inVertexShaderModule,

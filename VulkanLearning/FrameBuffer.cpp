@@ -13,7 +13,7 @@ void FrameBuffer::InitWithSize(int inWidth, int inHeight)
 		m_colorRenderTarget->width,
 		m_colorRenderTarget->height,
 		m_colorRenderTarget->format,
-		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	);
 	m_colorRenderTarget->imageView = GenImageView2D(
@@ -102,4 +102,35 @@ void FrameBuffer::InitWithSize(int inWidth, int inHeight)
 	framebufferCreateInfo.layers = 1;
 
 	vkCreateFramebuffer(vulkanDevice, &framebufferCreateInfo, nullptr, &m_framebuffer);
+}
+
+void FrameBuffer::BeginRender(VkCommandBuffer inCommandBuffer)
+{
+	static bool isFirstTime = true;
+	VkImageSubresourceRange subresourceRange = {
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		0, 1, 0, 1
+	};
+	TransferImageLayout(
+		inCommandBuffer, m_colorRenderTarget->image, subresourceRange,
+		isFirstTime ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+	);
+	isFirstTime = false;
+
+	VkClearValue clearValues[2] = {};
+	clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	clearValues[1].depthStencil = { 1.0f, 0u };
+	VkRenderPassBeginInfo renderPassBeginInfo = {};
+	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassBeginInfo.clearValueCount = 2;
+	renderPassBeginInfo.framebuffer = m_framebuffer;
+	renderPassBeginInfo.pClearValues = clearValues;
+	renderPassBeginInfo.renderArea.offset = { 0, 0 };
+	renderPassBeginInfo.renderArea.extent = {
+		(uint32_t)m_colorRenderTarget->width,
+		(uint32_t)m_colorRenderTarget->height
+	};
+	renderPassBeginInfo.renderPass = m_renderPass;
+	vkCmdBeginRenderPass(inCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }

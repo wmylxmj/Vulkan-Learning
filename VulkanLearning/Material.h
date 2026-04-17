@@ -12,7 +12,11 @@ public:
 	void SetUniformBuffer(uint32_t dstBinding, VkBuffer uniformBuffer, uint32_t uniformBufferSize);
 	void SetTexture(uint32_t dstBinding, VkImageView textureImageView, VkSampler textureSampler);
 	void SetTexture2D(uint32_t dstBinding, uint32_t dstArreyIndex, VkImageView textureImageView, VkSampler textureSampler);
-	void Activate(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+	void Activate(
+		VkCommandBuffer commandBuffer,
+		VkRenderPass renderPass,
+		VkPipelineLayout pipelineLayout
+	);
 
 	VkDescriptorSet m_descriptorSet;
 	VkDescriptorPool m_descriptorPool;

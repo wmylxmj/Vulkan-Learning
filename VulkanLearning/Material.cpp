@@ -178,10 +178,11 @@ void Material::SetTexture2D(uint32_t dstBinding, uint32_t dstArreyIndex, VkImage
 	vkUpdateDescriptorSets(GetVulkanDevice(), 1, writeDescriptorSets, 0, nullptr);
 }
 
-void Material::Activate(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
+void Material::Activate(VkCommandBuffer commandBuffer, VkRenderPass renderPass, VkPipelineLayout pipelineLayout)
 {
 	if (m_pipeline == nullptr) {
 		m_pipeline = CreateVTFPipeline(
+			renderPass,
 			StaticMesh::sm_vertexInputBindingDescriptions,
 			StaticMesh::sm_vertexInputAttributeDescriptions,
 			m_vertexShaderModule,

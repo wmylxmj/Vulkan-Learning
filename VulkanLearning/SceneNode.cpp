@@ -26,7 +26,12 @@ void SceneNode::SetScale(glm::vec4 scale)
 
 static bool s_useCachedCommandBuffer = false;
 
-void SceneNode::Draw(VkCommandBuffer commandBuffer, glm::mat4& viewMatrix, glm::mat4& projectionMatrix)
+void SceneNode::Draw(
+	VkCommandBuffer commandBuffer,
+	VkRenderPass renderPass,
+	glm::mat4& viewMatrix,
+	glm::mat4& projectionMatrix
+)
 {
 	if (m_needUpdate)
 	{
@@ -85,7 +90,7 @@ void SceneNode::Draw(VkCommandBuffer commandBuffer, glm::mat4& viewMatrix, glm::
 		{
 			ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();
 
-			m_staticMesh->m_material.Activate(commandBuffer, pShaderParameterDescription->pipelineLayout);
+			m_staticMesh->m_material.Activate(commandBuffer, renderPass, pShaderParameterDescription->pipelineLayout);
 			m_staticMesh->Draw(commandBuffer);
 		}
 	}
@@ -122,7 +127,7 @@ void SceneNode::GenerateDrawCommand(glm::mat4& viewMatrix, glm::mat4& projection
 
 		if (m_staticMesh != nullptr)
 		{
-			m_staticMesh->m_material.Activate(m_pCachedDrawCommandBuffer[i], pShaderParameterDescription->pipelineLayout);
+			m_staticMesh->m_material.Activate(m_pCachedDrawCommandBuffer[i], GetVulkanSwapChainRenderPass(), pShaderParameterDescription->pipelineLayout);
 			m_staticMesh->Draw(m_pCachedDrawCommandBuffer[i]);
 		}
 

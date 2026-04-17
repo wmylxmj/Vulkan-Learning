@@ -972,6 +972,7 @@ VkPipeline CreateVGFPipeline(
 }
 
 VkPipeline CreateVTFPipeline(
+	VkRenderPass inRenderPass,
 	const std::vector<VkVertexInputBindingDescription>& inVertexInputBindingDescriptions,
 	const std::vector<VkVertexInputAttributeDescription>& inVertexInputAttributeDescriptions,
 	const VkShaderModule inVertexShaderModule,
@@ -1083,7 +1084,7 @@ VkPipeline CreateVTFPipeline(
 
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {};
 	graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	graphicsPipelineCreateInfo.renderPass = GetVulkanSwapChainRenderPass();
+	graphicsPipelineCreateInfo.renderPass = inRenderPass;
 	graphicsPipelineCreateInfo.basePipelineIndex = -1;
 	graphicsPipelineCreateInfo.pVertexInputState = &vertexInputStateCreateInfo;
 	graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;

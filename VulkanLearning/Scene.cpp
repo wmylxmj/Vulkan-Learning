@@ -87,7 +87,6 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 {
 	VkCommandBuffer vulkanCommandBuffer = CreateCommandBuffer();
 	BeginCommandBuffer(vulkanCommandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-	uint32_t swapChainFrameIndex = BeginSwapChainRenderPass(vulkanCommandBuffer);
 
 	ShaderParameterDescription* pShaderParameterDescription = GetUberPassShaderParameterDescription();
 	vkCmdPushConstants(vulkanCommandBuffer, pShaderParameterDescription->pipelineLayout,
@@ -97,7 +96,13 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 		VK_SHADER_STAGE_VERTEX_BIT,
 		sizeof(glm::mat4), sizeof(glm::mat4), &s_projectionMatrix);
 
-	s_pSphereNode->Draw(vulkanCommandBuffer, s_viewMatrix, s_projectionMatrix);
+	s_pFrameBuffer->BeginRender(vulkanCommandBuffer);
+
+	s_pSphereNode->Draw(vulkanCommandBuffer, s_pFrameBuffer->m_renderPass, s_viewMatrix, s_projectionMatrix);
+
+	vkCmdEndRenderPass(vulkanCommandBuffer);
+
+	uint32_t swapChainFrameIndex = BeginSwapChainRenderPass(vulkanCommandBuffer);
 
 	EndSwapChainRenderPass(vulkanCommandBuffer);
 }
