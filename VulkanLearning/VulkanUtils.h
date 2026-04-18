@@ -78,7 +78,15 @@ Buffer* GenBufferObject(
 
 ShaderParameterDescription* GetUberPassShaderParameterDescription();
 
+enum PipelineType {
+	VERT_FRAG,
+	VERT_GEOM_FRAG,
+	VERT_TESC_TESE_FRAG
+};
+
 VkPipeline CreatePipeline(
+	VkRenderPass inRenderPass,
+	VkPrimitiveTopology inPrimitiveTopology,
 	const std::vector<VkVertexInputBindingDescription>& inVertexInputBindingDescriptions,
 	const std::vector<VkVertexInputAttributeDescription>& inVertexInputAttributeDescriptions,
 	const VkShaderModule inVertexShaderModule,

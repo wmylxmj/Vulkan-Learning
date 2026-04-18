@@ -5,10 +5,12 @@ Material::Material()
 {
 	m_descriptorSet = nullptr;
 	m_pipeline = nullptr;
+	m_primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }
 
 void Material::Init(const char* vertexShaderPath, const char* fragmentShaderPath)
 {
+	m_pipelineType = PipelineType::VERT_FRAG;
 	m_vertexShaderModule = CompileShader(vertexShaderPath);
 	m_fragmentShaderModule = CompileShader(fragmentShaderPath);
 
@@ -45,6 +47,7 @@ void Material::Init(const char* vertexShaderPath, const char* fragmentShaderPath
 
 void Material::InitVGF(const char* vertexShaderPath, const char* geometryShaderPath, const char* fragmentShaderPath)
 {
+	m_pipelineType = PipelineType::VERT_GEOM_FRAG;
 	m_vertexShaderModule = CompileShader(vertexShaderPath);
 	m_geometryShaderModule = CompileShader(geometryShaderPath);
 	m_fragmentShaderModule = CompileShader(fragmentShaderPath);
@@ -82,6 +85,7 @@ void Material::InitVGF(const char* vertexShaderPath, const char* geometryShaderP
 
 void Material::InitVTF(const char* vertexShaderPath, const char* tessellationControlShaderPath, const char* tessellationEvaluationShaderPath, const char* fragmentShaderPath)
 {
+	m_pipelineType = PipelineType::VERT_TESC_TESE_FRAG;
 	m_vertexShaderModule = CompileShader(vertexShaderPath);
 	m_tessellationControlShaderModule = CompileShader(tessellationControlShaderPath);
 	m_tessellationEvaluationShaderModule = CompileShader(tessellationEvaluationShaderPath);
@@ -181,15 +185,30 @@ void Material::SetTexture2D(uint32_t dstBinding, uint32_t dstArreyIndex, VkImage
 void Material::Activate(VkCommandBuffer commandBuffer, VkRenderPass renderPass, VkPipelineLayout pipelineLayout)
 {
 	if (m_pipeline == nullptr) {
-		m_pipeline = CreateVTFPipeline(
-			renderPass,
-			StaticMesh::sm_vertexInputBindingDescriptions,
-			StaticMesh::sm_vertexInputAttributeDescriptions,
-			m_vertexShaderModule,
-			m_tessellationControlShaderModule,
-			m_tessellationEvaluationShaderModule,
-			m_fragmentShaderModule
-		);
+		switch (m_pipelineType) {
+		case PipelineType::VERT_FRAG:
+			m_pipeline = CreatePipeline(
+				renderPass,
+				m_primitiveTopology,
+				StaticMesh::sm_vertexInputBindingDescriptions,
+				StaticMesh::sm_vertexInputAttributeDescriptions,
+				m_vertexShaderModule,
+				m_fragmentShaderModule
+			);
+			break;
+
+		case PipelineType::VERT_TESC_TESE_FRAG:
+			m_pipeline = CreateVTFPipeline(
+				renderPass,
+				StaticMesh::sm_vertexInputBindingDescriptions,
+				StaticMesh::sm_vertexInputAttributeDescriptions,
+				m_vertexShaderModule,
+				m_tessellationControlShaderModule,
+				m_tessellationEvaluationShaderModule,
+				m_fragmentShaderModule
+			);
+			break;
+		}
 	}
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 

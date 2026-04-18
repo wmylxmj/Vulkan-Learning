@@ -155,6 +155,8 @@
     <ClInclude Include="VulkanUtils.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resource\fsq.frag" />
+    <None Include="Resource\fsq.vert" />
     <None Include="Resource\gstest.frag" />
     <None Include="Resource\gstest.geom" />
     <None Include="Resource\gstest.vert" />

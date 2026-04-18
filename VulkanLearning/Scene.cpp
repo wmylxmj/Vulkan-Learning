@@ -15,6 +15,7 @@
 #endif
 
 SceneNode* s_pSphereNode = nullptr;
+SceneNode* s_pFullScreenQuadNode = nullptr;
 Texture* s_pSkyboxTexture = nullptr;
 
 glm::mat4 s_viewMatrix;
@@ -81,6 +82,31 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 
 	s_pFrameBuffer = new FrameBuffer();
 	s_pFrameBuffer->InitWithSize(1280, 720);
+
+	s_pFullScreenQuadNode = new SceneNode();
+	s_pFullScreenQuadNode->m_staticMesh = new StaticMesh();
+	s_pFullScreenQuadNode->m_staticMesh->SetVertexCount(4);
+	s_pFullScreenQuadNode->m_staticMesh->SetPosition(0, glm::vec4(-1.0f, 1.0f, 0.0f, 1.0f));
+	s_pFullScreenQuadNode->m_staticMesh->SetTexCoord(0, glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
+	s_pFullScreenQuadNode->m_staticMesh->SetPosition(1, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+	s_pFullScreenQuadNode->m_staticMesh->SetTexCoord(1, glm::vec4(1.0f, 0.0f, 0.0f, 0.0f));
+	s_pFullScreenQuadNode->m_staticMesh->SetPosition(2, glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f));
+	s_pFullScreenQuadNode->m_staticMesh->SetTexCoord(2, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	s_pFullScreenQuadNode->m_staticMesh->SetPosition(3, glm::vec4(1.0f, -1.0f, 0.0f, 1.0f));
+	s_pFullScreenQuadNode->m_staticMesh->SetTexCoord(3, glm::vec4(1.0f, 1.0f, 0.0f, 0.0f));
+	s_pFullScreenQuadNode->m_staticMesh->m_pVertexBuffer = GenBufferObject(
+		s_pFullScreenQuadNode->m_staticMesh->m_vertexCount * sizeof(StaticMeshVertexData),
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		s_pFullScreenQuadNode->m_staticMesh->m_vertexCount * sizeof(StaticMeshVertexData),
+		s_pFullScreenQuadNode->m_staticMesh->m_vertexData
+	);
+	s_pFullScreenQuadNode->m_staticMesh->m_material.Init(
+		"Resource/fsq.vsb",
+		"Resource/fsq.fsb"
+	);
+	s_pFullScreenQuadNode->m_staticMesh->m_material.m_primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+	s_pFullScreenQuadNode->m_staticMesh->m_material.SetTexture2D(2, 0, s_pFrameBuffer->m_colorRenderTarget->imageView, sampler);
 }
 
 void RenderOneFrame(float inFrameTimeInSeconds)
@@ -103,6 +129,6 @@ void RenderOneFrame(float inFrameTimeInSeconds)
 	vkCmdEndRenderPass(vulkanCommandBuffer);
 
 	uint32_t swapChainFrameIndex = BeginSwapChainRenderPass(vulkanCommandBuffer);
-
+	s_pFullScreenQuadNode->Draw(vulkanCommandBuffer, GetVulkanSwapChainRenderPass(), s_viewMatrix, s_projectionMatrix);
 	EndSwapChainRenderPass(vulkanCommandBuffer);
 }

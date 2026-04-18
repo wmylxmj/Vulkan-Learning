@@ -26,4 +26,6 @@ public:
 	VkShaderModule m_tessellationEvaluationShaderModule;
 	VkShaderModule m_geometryShaderModule;
 	VkShaderModule m_fragmentShaderModule;
+	PipelineType m_pipelineType;
+	VkPrimitiveTopology m_primitiveTopology;
 };
