@@ -74,5 +74,6 @@
     <None Include="Resource\tstest.tese" />
     <None Include="Resource\fsq.vert" />
     <None Include="Resource\fsq.frag" />
+    <None Include="Resource\test.comp" />
   </ItemGroup>
 </Project>

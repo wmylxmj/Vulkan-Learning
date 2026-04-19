@@ -160,6 +160,7 @@
     <None Include="Resource\gstest.frag" />
     <None Include="Resource\gstest.geom" />
     <None Include="Resource\gstest.vert" />
+    <None Include="Resource\test.comp" />
     <None Include="Resource\test.frag" />
     <None Include="Resource\test.fsb" />
     <None Include="Resource\test.vert" />
