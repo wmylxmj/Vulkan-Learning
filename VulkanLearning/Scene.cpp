@@ -238,7 +238,7 @@ void InitScene(int inCanvasWidth, int inCanvasHeight)
 		);
 
 		// Dispatch the compute shader
-		vkCmdDispatch(commandBuffer, pDiffuseTexture->width / 16, pDiffuseTexture->height / 16, 1);
+		vkCmdDispatch(commandBuffer, pDiffuseTexture->width * pDiffuseTexture->height / 64, 1, 1);
 		TransferImageLayout(
 			commandBuffer, pOutputImage->image, subresourceRange,
 			VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
